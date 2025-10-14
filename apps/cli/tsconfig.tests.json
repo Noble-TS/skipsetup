@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "."  // Allow tests/src at root
+  },
+  "include": [
+    "tests/**/*.ts",
+    "src/**/*.ts"  // Add src for imports in tests
+  ],
+  "references": [
+    { "path": "../../packages/core" }
+  ]
+}
