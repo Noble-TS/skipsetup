@@ -2,6 +2,7 @@
   "name": "fullstackforge",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -13,13 +14,18 @@
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
     "publish:cli": "turbo run build --filter=cli && cd apps/cli && npm publish --access public",
-    "prepare": "husky && husky install"
+    "prepare": "husky install"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "@typescript-eslint/parser": "^8.0.0",
+    "@eslint/js": "^9.37.0",
+    "@types/node": "^24.7.2",
+    "@typescript-eslint/eslint-plugin": "^8.46.1",
+    "@typescript-eslint/parser": "^8.46.1",
     "@vitest/coverage-v8": "^2.0.0",
     "eslint": "^9.0.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "globals": "^16.4.0",
     "husky": "^8.0.0",
     "lint-staged": "^15.5.2",
     "prettier": "^3.3.3",
@@ -29,10 +35,9 @@
   },
   "packageManager": "pnpm@9.12.2",
   "lint-staged": {
-  "*.{ts,tsx,js,jsx}": [
+  "**/*.{ts,tsx,js,jsx,json,md,yml}": [
     "eslint --fix",
     "prettier --write"
-  ],
-  "*.{json,md,yml}": "prettier --write"
+  ]
 }
 }

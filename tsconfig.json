@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022"],
+    "lib": ["ES2022", "dom"],  // <-- Added "dom" for console/globalThis
     "module": "ESNext",
     "moduleResolution": "bundler",
     "strict": true,
