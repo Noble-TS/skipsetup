@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import { projectSizes } from '@forge/core';
 import { writeFile } from '@forge/core';
 import fs from 'fs';
+import { execFileSync } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -57,12 +58,11 @@ export async function scaffoldProject(
       console.log('✓ Patched tsconfig.json');
     }
 
-    // Step 3: Install any custom plugins
-    const activePlugins = config.plugins.filter((p) => p === 'email-password');
-    if (activePlugins.length > 0) {
+    // Step 3: Install ANY plugins from config (all for large, etc.)
+    if (config.plugins.length > 0) {
       console.log('Installing plugins...');
-      for (const plugin of activePlugins) {
-        await installPlugin(plugin, fullDir);
+      for (const plugin of config.plugins) {
+        await installPlugin(plugin, fullDir, rootDir); // Pass rootDir for local path check
       }
     }
 
@@ -81,7 +81,7 @@ export async function scaffoldProject(
       );
     }
 
-    // Step 5: Setup infrastructure files
+    // Step 5: Setup infrastructure files (extended for large: postgres, redis, queue, s3)
     console.log('Setting up infrastructure...');
     await setupInfrastructure(config.infra, fullDir);
 
@@ -130,57 +130,101 @@ export async function scaffoldProject(
 
 async function installPlugin(
   plugin: string,
-  projectDir: string
+  projectDir: string,
+  rootDir: string // Added for local path resolution
 ): Promise<void> {
   const pluginPkg = `@forge/plugin-${plugin}`;
-  const localPluginPath = path.join(rootDir, 'packages', `plugins-${plugin}`);
+  const localPluginPath = path.join(rootDir, 'packages', `plugins-${plugin}`); // e.g., packages/plugins-stripe
 
   console.log(`Installing plugin: ${plugin}`);
 
   try {
+    let installed = false;
+
+    // Priority: Local workspace (monorepo)
     if (fs.existsSync(localPluginPath)) {
-      // Use local workspace version
+      console.log(`Using local workspace for ${pluginPkg}`);
       execSync(`pnpm add ${pluginPkg}@workspace:*`, {
         cwd: projectDir,
-        stdio: 'pipe',
+        stdio: 'inherit', // Show progress for workspace add
         shell: process.env.SHELL || '/bin/bash',
       });
+      installed = true;
     } else {
-      // Install from registry
+      // Fallback: Registry
+      console.log(`Fetching ${pluginPkg} from registry`);
       execSync(`pnpm add ${pluginPkg}`, {
         cwd: projectDir,
-        stdio: 'pipe',
+        stdio: 'inherit',
         shell: process.env.SHELL || '/bin/bash',
       });
+      installed = true;
     }
 
-    // Activate plugin
-    const manifestPath = path.join(
-      projectDir,
-      'node_modules',
-      pluginPkg,
-      'manifest.json'
-    );
-    if (fs.existsSync(manifestPath)) {
-      const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-      const activateRelPath = manifest.hooks?.activate;
-      if (activateRelPath) {
-        const activatePath = path.join(
-          projectDir,
-          'node_modules',
-          pluginPkg,
-          activateRelPath
-        );
-        execSync(`node ${activatePath} ${projectDir}`, {
-          stdio: 'inherit',
-          shell: process.env.SHELL || '/bin/bash',
-        });
+    // Activate if installed
+    if (installed) {
+      const manifestPath = path.join(
+        projectDir,
+        'node_modules',
+        pluginPkg,
+        'manifest.json'
+      );
+      if (fs.existsSync(manifestPath)) {
+        const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+        const activateRelPath = manifest.hooks?.activate;
+
+        if (activateRelPath) {
+          const activatePath = path.join(
+            projectDir,
+            'node_modules',
+            pluginPkg,
+            activateRelPath
+          );
+          console.log(
+            `ACTIVATION DEBUG: Path exists? ${fs.existsSync(activatePath)}`
+          );
+          console.log(
+            `ACTIVATION DEBUG: Path stats:`,
+            fs.statSync(activatePath)
+          ); // Show if file
+          console.log(
+            `ACTIVATION DEBUG: Running node ${activatePath} ${projectDir}`
+          );
+
+          // Test read file
+          try {
+            const content = fs.readFileSync(activatePath, 'utf8');
+            console.log(
+              `ACTIVATION DEBUG: First 200 chars of script: ${content.substring(0, 200)}`
+            );
+          } catch (e) {
+            console.log(`ACTIVATION DEBUG: Cannot read script: ${e}`);
+          }
+
+          try {
+            execFileSync('node', [activatePath, projectDir], {
+              cwd: projectDir,
+              stdio: 'inherit',
+            });
+            console.log(`✓ Activated ${plugin}`);
+          } catch (error) {
+            console.error(`Activation failed for ${plugin}:`, error);
+            throw error;
+          }
+        }
       }
+      console.log(`✓ Plugin ${plugin} installed and activated`);
     }
-
-    console.log(`✓ Plugin ${plugin} installed and activated`);
-  } catch {
-    console.log(`⚠ Skipping plugin ${plugin}: installation failed`);
+  } catch (error) {
+    if (error instanceof Error) {
+      console.log(
+        `⚠ Skipping plugin ${plugin}: installation or activation failed - ${error.message}`
+      );
+    } else {
+      console.log(
+        `⚠ Skipping plugin ${plugin}: installation or activation failed - Unknown error`
+      );
+    }
   }
 }
 
@@ -188,19 +232,37 @@ async function setupInfrastructure(
   infra: string[],
   projectDir: string
 ): Promise<void> {
+  let dockerContent = `version: '3.8'\nservices:\n`;
+
+  if (infra.includes('postgres')) {
+    dockerContent += `  postgres:\n    image: postgres:16\n    environment:\n      POSTGRES_PASSWORD: password\n      POSTGRES_DB: app\n    ports:\n      - "5432:5432"\n    volumes:\n      - postgres_data:/var/lib/postgresql/data\n`;
+    console.log('✓ PostgreSQL Docker configuration added');
+  }
+
+  if (infra.includes('redis')) {
+    dockerContent += `  redis:\n    image: redis:7\n    ports:\n      - "6379:6379"\n`;
+    console.log('✓ Redis configuration added');
+  }
+
+  if (infra.includes('queue')) {
+    // Stub for BullMQ or similar - add deps in plugin if needed
+    dockerContent += `  # queue: Add RabbitMQ or Redis-based queue\n`;
+    console.log('✓ Queue stub added (implement in plugin)');
+  }
+
+  if (infra.includes('s3')) {
+    // Stub for MinIO (S3-compatible)
+    dockerContent += `  minio:\n    image: minio/minio\n    command: server /data\n    ports:\n      - "9000:9000"\n    environment:\n      MINIO_ROOT_USER: minioadmin\n      MINIO_ROOT_PASSWORD: minioadmin\n`;
+    console.log('✓ S3 (MinIO) stub added');
+  }
+
   if (infra.includes('local-db')) {
-    await writeFile(
-      projectDir,
-      'docker-compose.yml',
-      `# Local Development Database\n# This project uses SQLite for local development\n# Run: pnpm prisma db push\n\nversion: '3.8'\nservices:\n  # Add other services if needed\n  # SQLite doesn't require Docker - it uses a local file\n`
-    );
+    dockerContent = `# Local Development Database\n# This project uses SQLite for local development\n# Run: pnpm prisma db push\n\nversion: '3.8'\nservices:\n  # Add other services if needed\n  # SQLite doesn't require Docker - it uses a local file\n`;
     console.log('✓ Local development configuration created');
-  } else if (infra.includes('postgres')) {
-    await writeFile(
-      projectDir,
-      'docker-compose.yml',
-      `version: '3.8'\nservices:\n  postgres:\n    image: postgres:16\n    environment:\n      POSTGRES_PASSWORD: password\n      POSTGRES_DB: app\n    ports:\n      - "5432:5432"\n    volumes:\n      - postgres_data:/var/lib/postgresql/data\n\nvolumes:\n  postgres_data:\n`
-    );
-    console.log('✓ PostgreSQL Docker configuration created');
+  }
+
+  if (dockerContent.includes('services:')) {
+    dockerContent += `\nvolumes:\n  postgres_data:\n`;
+    await writeFile(projectDir, 'docker-compose.yml', dockerContent);
   }
 }

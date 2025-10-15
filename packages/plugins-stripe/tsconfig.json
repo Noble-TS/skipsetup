@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": true,
+    "declarationMap": true,
+    "verbatimModuleSyntax": true,  
+    "moduleResolution": "node",
+    "module": "ESNext",
+    "target": "ES2022",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts", "tests/**/*d.ts","tests/**/*.js"],
+  "references": [
+    { "path": "../core" }
+  ]
+}

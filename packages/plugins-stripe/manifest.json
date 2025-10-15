@@ -1,0 +1,7 @@
+{
+  "name": "@forge/plugin-stripe",
+  "version": "0.1.0",
+  "hooks": {
+    "activate": "dist/hooks/activate.js"
+  }
+}
