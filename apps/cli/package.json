@@ -1,0 +1,36 @@
+{
+  "name": "fullstackforge",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "forge": "dist/cli.js"
+  },
+  "main": "dist/cli.js",
+  "types": "dist/cli.d.ts",
+  "scripts": {
+    "build": "tsc && chmod +x dist/cli.js",
+    "type-check": "tsc --noEmit -p tsconfig.tests.json",
+    "lint": "eslint src --ext .ts --fix",
+    "test": "vitest --config vitest.config.ts"
+  },
+  "dependencies": {
+    "@forge/core": "workspace:*",
+    "clipanion": "^3.2.1",
+    "js-yaml": "^4.1.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.19.1",
+    "typescript": "^5.5.4",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^2.0.0"
+  },
+  "typesVersions": {
+    ">=4.5": {
+      "*": [
+        "dist/*"
+      ]
+    }
+  }
+}

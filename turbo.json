@@ -2,10 +2,27 @@
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": ["**/.env.*local"],
   "tasks": {
-    "build": { "dependsOn": ["^build"], "outputs": ["dist/**", ".next/**"] },
-    "dev": { "cache": false, "persistent": true },
-    "test": { "dependsOn": ["build"], "outputs": ["coverage/**"] },
-    "lint": { "outputs": [] },
-    "type-check": { "dependsOn": ["build"] }
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**"],
+      "env": ["FORGE_ENCRYPT_KEY"]  
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "test": {
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**"],
+      "env": ["FORGE_ENCRYPT_KEY"]
+    },
+    "lint": {
+      "outputs": []
+    },
+    "type-check": {
+      "dependsOn": [],  
+      "outputs": [],
+      "env": ["NODE_ENV"]
+    }
   }
 }

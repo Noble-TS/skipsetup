@@ -1,0 +1,25 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "moduleResolution": "node16",
+    "module": "node16",
+    "target": "es2022",
+    "declaration": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@forge/core": ["../../packages/core/dist/index.d.ts"],
+      "@forge/core/*": ["../../packages/core/dist/*.d.ts"]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": [ "dist/**/*", "node_modules/**/*"], // Add this line
+  "references": [
+    { "path": "../../packages/core" }
+  ]
+}

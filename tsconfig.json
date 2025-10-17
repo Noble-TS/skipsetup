@@ -9,11 +9,18 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
-    "paths": { "@forge/*": ["./packages/core/src/*"] },
+    "paths": {
+      "@forge/*": ["packages/*/src"]
+    },
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
     "outDir": "./dist",
-    "rootDir": "./src"
-  }
+    "rootDir": "./",
+    
+  },
+  "references": [
+    { "path": "packages/core" },
+    { "path": "apps/cli" }
+  ]
 }
