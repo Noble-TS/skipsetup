@@ -77,12 +77,14 @@ async function activate(projectDir: string) {
     const utilsDir = path.join(fullDir, 'src/utils');
     const routersDir = path.join(fullDir, 'src/server/api/routers');
     const hooksDir = path.join(fullDir, 'src/hooks');
+    const moduelsDir = path.join(fullDir, 'src/modules');
     console.log(
       `HOOK: Creating directories: ${utilsDir}, ${routersDir}, ${hooksDir}`
     );
     await fs.mkdir(utilsDir, { recursive: true });
     await fs.mkdir(routersDir, { recursive: true });
     await fs.mkdir(hooksDir, { recursive: true });
+    await fs.mkdir(moduelsDir, { recursive: true });
 
     // 4️⃣ Inject Stripe utility
     const utilsPath = path.join(utilsDir, 'stripe.ts');
@@ -173,7 +175,7 @@ export const paymentsRouter = createTRPCRouter({
       }
     } else {
       console.warn('HOOK: Root router not found, creating new');
-      const rootRouterContent = `import { createTRPCRouter } from '~/server/api/trpc';
+      const rootRouterContent = `import { createTRPCRouter } from '../server/api/trpc';
 import { paymentsRouter } from './routers/payments';
 
 export const appRouter = createTRPCRouter({
@@ -187,7 +189,7 @@ export type AppRouter = typeof appRouter;
 
     // 7️⃣ Inject usePayments hook (client)
     const hooksPath = path.join(hooksDir, 'usePayments.ts');
-    const hookContent = `import { api } from "~/utils/api";
+    const hookContent = `import { api } from "../utils/api";
 
 export function usePayments() {
   const createSession = api.payments.createSession.useMutation();
@@ -203,6 +205,27 @@ export function usePayments() {
   };
 }
 `;
+    const modulesPath = path.join(moduelsDir, 'payments.ts');
+
+    console.log('HOOK: Replacing payments module with Stripe integration');
+    const paymentsModuleContent = `import { usePayments } from '../hooks/usePayments';
+import { api } from '../utils/api';
+
+// payments module with Stripe integration
+export function payments() {
+  return {
+    usePayments,
+    createSession: api.payments.createSession,
+    createConnectedAccount: api.payments.createConnectedAccount,
+    transferToAccount: api.payments.transferToAccount,
+    verifyWebhook: api.payments.verifyWebhook,
+  };
+}
+`;
+    await writeFileLocal(modulesPath, paymentsModuleContent);
+    console.log(
+      'HOOK: Replaced src/modules/payments.ts with Stripe integration'
+    );
     await writeFileLocal(hooksPath, hookContent);
     console.log('HOOK: Injected src/hooks/usePayments.ts');
 

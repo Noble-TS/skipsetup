@@ -49,7 +49,7 @@ export async function scaffoldProject(
     // Step 1: Create T3 app
     console.log('Creating T3 app...');
     execSync(
-      `pnpm create t3-app@latest ${projectDir} --CI --trpc --tailwind --prisma --eslint`,
+      `pnpm create t3-app@latest ${projectDir} --CI --trpc --tailwind --prisma --eslint --noGit`,
       {
         cwd: process.cwd(),
         stdio: 'inherit',
@@ -159,16 +159,16 @@ export const api = createTRPCReact<AppRouter>();
       }
     }
 
-    // Step 7: Create module stubs
-    console.log('Creating module stubs...');
-    for (const module of config.modules) {
-      const moduleDir = path.join(fullDir, 'src/modules');
-      await fs.mkdir(moduleDir, { recursive: true });
-      await writeFileLocal(
-        path.join(fullDir, `src/modules/${module}.ts`),
-        `// ${module} module stub\n// Add your ${module} implementation here\nexport function ${module}() {\n  return "${module} module";\n}`
-      );
-    }
+    // // Step 7: Create module stubs
+    // console.log('Creating module stubs...');
+    // for (const module of config.modules) {
+    //   const moduleDir = path.join(fullDir, 'src/modules');
+    //   await fs.mkdir(moduleDir, { recursive: true });
+    //   await writeFileLocal(
+    //     path.join(fullDir, `src/modules/${module}.ts`),
+    //     `// ${module} module stub\n// Add your ${module} implementation here\nexport function ${module}() {\n  return "${module} module";\n}`
+    //   );
+    // }
 
     // Step 8: Setup infrastructure files
     console.log('Setting up infrastructure...');
