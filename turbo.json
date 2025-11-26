@@ -4,8 +4,8 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**"],
-      "env": ["FORGE_ENCRYPT_KEY"]  
+      "outputs": ["dist/**", "tsconfig.tsbuildinfo"],
+      "env": ["FORGE_ENCRYPT_KEY"]
     },
     "dev": {
       "cache": false,
@@ -20,7 +20,7 @@
       "outputs": []
     },
     "type-check": {
-      "dependsOn": [],  
+      "dependsOn": [],
       "outputs": [],
       "env": ["NODE_ENV"]
     }

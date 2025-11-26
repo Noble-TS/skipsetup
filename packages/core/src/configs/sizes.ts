@@ -15,7 +15,7 @@ export const projectSizes: Record<
   small: {
     description: 'Minimal MVP: Auth + DB basics.',
     modules: ['auth', 'db'],
-    plugins: ['email-password'],
+    plugins: ['stripe'],
     infra: ['local-db'],
   },
   medium: {
@@ -25,7 +25,7 @@ export const projectSizes: Record<
     infra: ['postgres', 'redis'],
   },
   large: {
-    description: 'Enterprise: Orgs + scale.',
+    description: 'Enterprise: Orgs + scales hhjhj.',
     modules: ['auth', 'db', 'admin', 'orgs', 'payments', 'monitoring'],
     plugins: [
       // 'email-password',

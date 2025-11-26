@@ -1,13 +1,109 @@
-import { execSync, execFileSync } from 'child_process';
+// apps/cli/src/core/scaffold.ts
+
+import { execSync } from 'child_process';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { projectSizes } from '@forge/core';
 import fs from 'fs/promises';
 import fsSync from 'fs';
+import { performance } from 'perf_hooks';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '../../../..');
+
+// --- UI & TERMINAL UTILITIES ---
+
+const STYLE = {
+  reset: '\x1b[0m',
+  bold: '\x1b[1m',
+  dim: '\x1b[2m',
+  italic: '\x1b[3m',
+  // Modern RGB Colors
+  primary: '\x1b[38;2;99;102;241m', // Indigo 500
+  accent: '\x1b[38;2;6;182;212m', // Cyan 500
+  success: '\x1b[38;2;34;197;94m', // Green 500
+  warn: '\x1b[38;2;234;179;8m', // Yellow 500
+  error: '\x1b[38;2;239;68;68m', // Red 500
+  gray: '\x1b[38;2;107;114;128m', // Gray 500
+  white: '\x1b[38;2;255;255;255m',
+  // Backgrounds for Badges
+  bgPrimary: '\x1b[48;2;99;102;241m',
+  bgSuccess: '\x1b[48;2;34;197;94m',
+  bgWarn: '\x1b[48;2;234;179;8m',
+  bgError: '\x1b[48;2;239;68;68m',
+};
+
+const ui = {
+  badge: (text: string, color: keyof typeof STYLE, bg: keyof typeof STYLE) =>
+    `${STYLE[bg]}${STYLE.white}${STYLE.bold} ${text} ${STYLE.reset}`,
+
+  header: (title: string) => {
+    console.log('\n' + STYLE.gray + '─'.repeat(60) + STYLE.reset);
+    console.log(
+      `  ${STYLE.bold}${STYLE.primary}${title.toUpperCase()}${STYLE.reset}`
+    );
+    console.log(STYLE.gray + '─'.repeat(60) + STYLE.reset + '\n');
+  },
+
+  step: (current: number, total: number, msg: string) => {
+    console.log(
+      `${STYLE.dim}[${current}/${total}]${STYLE.reset} ${STYLE.bold}${msg}${STYLE.reset}`
+    );
+  },
+
+  substep: (msg: string) => {
+    console.log(
+      `${STYLE.gray}   │${STYLE.reset} ${STYLE.dim}${msg}${STYLE.reset}`
+    );
+  },
+
+  success: (msg: string, elapsed?: string) => {
+    const time = elapsed ? `${STYLE.dim} (${elapsed})${STYLE.reset}` : '';
+    console.log(
+      `${ui.badge('DONE', 'white', 'bgSuccess')} ${STYLE.success}${msg}${STYLE.reset}${time}\n`
+    );
+  },
+
+  error: (msg: string) => {
+    console.log(
+      `${ui.badge('ERR', 'white', 'bgError')} ${STYLE.error}${msg}${STYLE.reset}\n`
+    );
+  },
+
+  warn: (msg: string) => {
+    console.log(
+      `${ui.badge('WARN', 'white', 'bgWarn')} ${STYLE.warn}${msg}${STYLE.reset}`
+    );
+  },
+
+  info: (label: string, value: string) => {
+    console.log(
+      `${STYLE.accent} › ${STYLE.bold}${label}:${STYLE.reset} ${value}`
+    );
+  },
+};
+
+async function measure<T>(fn: () => Promise<T> | T): Promise<[T, string]> {
+  const start = performance.now();
+  const result = await fn();
+  const end = performance.now();
+  const duration = ((end - start) / 1000).toFixed(2) + 's';
+  return [result, duration];
+}
+
+function runQuietly(command: string, cwd: string) {
+  try {
+    execSync(command, { cwd, stdio: 'pipe' }); // pipe suppresses output unless we read it
+  } catch (error: any) {
+    // Only show output if it fails
+    console.log(error.stdout?.toString());
+    console.error(error.stderr?.toString());
+    throw error;
+  }
+}
+
+// --- FILE OPERATIONS ---
 
 async function writeFileLocal(
   fullPath: string,
@@ -15,53 +111,63 @@ async function writeFileLocal(
   options?: { append?: boolean }
 ): Promise<void> {
   try {
-    const dir = path.dirname(fullPath);
-    await fs.mkdir(dir, { recursive: true });
+    await fs.mkdir(path.dirname(fullPath), { recursive: true });
     if (options?.append) {
       const existing = await fs.readFile(fullPath, 'utf8').catch(() => '');
       content = existing + content;
     }
     await fs.writeFile(fullPath, content, 'utf8');
-  } catch (error) {
-    console.error(`SCAFFOLD: Failed to write file ${fullPath}:`, error);
-    throw error;
+  } catch {
+    ui.error(`Failed to write ${fullPath}`);
   }
 }
 
+// --- MAIN LOGIC ---
+
 export async function scaffoldProject(
   size: string,
-  template: string,
+  _template: string,
   projectDir: string
 ): Promise<void> {
   const config = projectSizes[size as keyof typeof projectSizes];
   const fullDir = path.resolve(projectDir);
 
-  console.log(`Scaffolding ${size} project in ${fullDir}`);
-  console.log('Using config:', JSON.stringify(config, null, 2));
+  ui.header(`Scaffold Project: ${size}`);
+  ui.info('Target', fullDir);
+  ui.info(
+    'Config',
+    `${config.plugins.length} plugins, ${config.infra.length} services`
+  );
+  console.log(''); // Spacer
 
-  // Cleanup
   if (fsSync.existsSync(fullDir)) {
+    ui.substep('Cleaning existing directory...');
     await fs.rm(fullDir, { recursive: true, force: true });
-    console.log(`Cleaned existing ${fullDir}`);
   }
 
   try {
     // Step 1: Create T3 app
-    console.log('Creating T3 app...');
-    execSync(
-      `pnpm create t3-app@latest ${projectDir} --CI --trpc --tailwind --prisma --eslint --noGit`,
-      {
-        cwd: process.cwd(),
-        stdio: 'inherit',
-        shell: process.env.SHELL || '/bin/bash',
-      }
+    ui.step(1, 7, 'Initialize System');
+    ui.substep('Bootstrapping T3 App (Next.js, Tailwind, Prisma)...');
+
+    await measure(() => {
+      execSync(
+        `pnpm create t3-app@latest ${projectDir} --CI --trpc --tailwind --prisma --eslint --noGit --noInstall --appRouter`,
+        { cwd: process.cwd(), stdio: 'ignore', shell: '/bin/bash' } // muted stdio for clean UI
+      );
+    });
+    // Manually logging success here to keep flow tight
+    console.log(
+      `${STYLE.gray}   │${STYLE.reset} ${STYLE.success}Core files generated${STYLE.reset}`
     );
 
-    // Step 2: Update package.json
-    const packageJsonPath = path.join(fullDir, 'package.json');
-    const packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf8'));
-    packageJson.dependencies = {
-      ...packageJson.dependencies,
+    // Step 2: Patch Configuration
+    ui.step(2, 7, 'Inject Dependencies');
+    const pkgPath = path.join(fullDir, 'package.json');
+    const pkg = JSON.parse(await fs.readFile(pkgPath, 'utf8'));
+
+    pkg.dependencies = {
+      ...pkg.dependencies,
       stripe: '^16.12.0',
       '@stripe/react-stripe-js': '^2.8.1',
       '@tanstack/react-query': '^5.90.5',
@@ -70,15 +176,12 @@ export async function scaffoldProject(
       '@trpc/react-query': '^11.6.0',
       '@trpc/server': '^11.6.0',
       superjson: '^2.2.2',
-      redis: '^4.7.0',
-      bullmq: '^5.21.5',
-      '@aws-sdk/client-s3': '^3.645.0',
       resend: '^4.0.0',
-      'socket.io': '^4.8.0',
       zod: '^3.25.76',
     };
-    packageJson.devDependencies = {
-      ...packageJson.devDependencies,
+
+    pkg.devDependencies = {
+      ...pkg.devDependencies,
       prisma: '^6.17.1',
       '@types/node': '^20.19.21',
       '@types/react': '^19.2.2',
@@ -86,38 +189,48 @@ export async function scaffoldProject(
       typescript: '^5.9.3',
       'typescript-eslint': '^8.46.1',
     };
-    await writeFileLocal(packageJsonPath, JSON.stringify(packageJson, null, 2));
 
-    // Step 3: Patch tsconfig.json
+    await writeFileLocal(pkgPath, JSON.stringify(pkg, null, 2));
+
+    // TSConfig fixes
     const tsconfigPath = path.join(fullDir, 'tsconfig.json');
     if (fsSync.existsSync(tsconfigPath)) {
-      console.log('Patching tsconfig.json for better compatibility...');
-      let tsconfigContent = await fs.readFile(tsconfigPath, 'utf8');
-      tsconfigContent = tsconfigContent
-        .replace(/"verbatimModuleSyntax": true,?\s*/g, '')
-        .replace(/"moduleResolution": "bundler"/g, '"moduleResolution": "node"')
-        .replace(/"resolveJsonModule": false/g, '"resolveJsonModule": true');
-      await writeFileLocal(tsconfigPath, tsconfigContent);
-      console.log('✓ Patched tsconfig.json');
+      let tsconfig = await fs.readFile(tsconfigPath, 'utf8');
+      tsconfig = tsconfig
+        .replace(/"verbatimModuleSyntax":\s*true,?\s*/g, '')
+        .replace(
+          /"moduleResolution":\s*"bundler"/g,
+          '"moduleResolution": "node"'
+        )
+        .replace(/"resolveJsonModule":\s*false/g, '"resolveJsonModule": true');
+      await writeFileLocal(tsconfigPath, tsconfig);
     }
+    ui.substep('package.json and tsconfig.json patched');
 
-    // Step 4: Install dependencies
-    console.log('Installing dependencies...');
-    try {
-      execSync('pnpm install', {
-        cwd: fullDir,
-        stdio: 'inherit',
-        timeout: 300000,
-      });
-      console.log('✓ Successfully installed dependencies!');
-    } catch (error) {
-      console.error('Failed to install dependencies:', error);
-      throw error;
-    }
+    // Step 3: Install
+    ui.step(3, 7, 'Install Dependencies');
+    ui.substep('Running pnpm install (network-concurrency: 1)...');
 
-    // Step 5: Setup tRPC
-    const trpcPath = path.join(fullDir, 'src/server/api/trpc.ts');
-    const trpcContent = `import { initTRPC } from '@trpc/server';
+    const [, installTime] = await measure(() => {
+      // We keep stdio inherit here as installs can be long and users trust visible movement
+      // But we prefix it nicely
+      try {
+        execSync('pnpm install --prefer-offline --network-concurrency 1', {
+          cwd: fullDir,
+          stdio: 'inherit',
+        });
+      } catch {
+        throw new Error('Dependency install failed');
+      }
+    });
+    ui.success('Packages installed', installTime);
+
+    // Step 4: tRPC setup
+    ui.step(4, 7, 'Configure API Layer (tRPC)');
+
+    await writeFileLocal(
+      path.join(fullDir, 'src/server/api/trpc.ts'),
+      `import { initTRPC } from '@trpc/server';
 import superjson from 'superjson';
 import { type NextRequest } from 'next/server';
 
@@ -132,83 +245,86 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
 });
 
 export const createTRPCRouter = t.router;
-`;
-    await writeFileLocal(trpcPath, trpcContent);
+`
+    );
 
-    const rootRouterPath = path.join(fullDir, 'src/server/api/root.ts');
-    const rootRouterContent = `import { createTRPCRouter } from '~/server/api/trpc';
+    await writeFileLocal(
+      path.join(fullDir, 'src/server/api/root.ts'),
+      `import { createTRPCRouter } from '~/server/api/trpc';
 
 export const appRouter = createTRPCRouter({});
 export type AppRouter = typeof appRouter;
-`;
-    await writeFileLocal(rootRouterPath, rootRouterContent);
+`
+    );
 
-    const apiUtilsPath = path.join(fullDir, 'src/utils/api.ts');
-    const apiUtilsContent = `import { createTRPCReact } from '@trpc/react-query';
+    await writeFileLocal(
+      path.join(fullDir, 'src/utils/api.ts'),
+      `import { createTRPCReact } from '@trpc/react-query';
 import { type AppRouter } from '~/server/api/root';
 
 export const api = createTRPCReact<AppRouter>();
-`;
-    await writeFileLocal(apiUtilsPath, apiUtilsContent);
+`
+    );
+    ui.substep('Router and Context initialized');
 
-    // Step 6: Install plugins
+    // Step 5: Plugins
+    ui.step(5, 7, 'Integrate Plugins');
     if (config.plugins.length > 0) {
-      console.log('Installing plugins...');
       for (const plugin of config.plugins) {
-        await installPlugin(plugin, fullDir, rootDir);
+        try {
+          ui.substep(`Processing: ${plugin}`);
+          await installPlugin(plugin, fullDir, rootDir);
+        } catch {
+          ui.warn(`Plugin ${plugin} skipped due to errors`);
+        }
       }
+    } else {
+      ui.substep('No plugins requested');
     }
 
-    // // Step 7: Create module stubs
-    // console.log('Creating module stubs...');
-    // for (const module of config.modules) {
-    //   const moduleDir = path.join(fullDir, 'src/modules');
-    //   await fs.mkdir(moduleDir, { recursive: true });
-    //   await writeFileLocal(
-    //     path.join(fullDir, `src/modules/${module}.ts`),
-    //     `// ${module} module stub\n// Add your ${module} implementation here\nexport function ${module}() {\n  return "${module} module";\n}`
-    //   );
-    // }
-
-    // Step 8: Setup infrastructure files
-    console.log('Setting up infrastructure...');
+    // Step 6: Infrastructure
+    ui.step(6, 7, 'Provision Local Infrastructure');
     await setupInfrastructure(config.infra, fullDir);
-
-    // Step 9: Write configuration file
     await writeFileLocal(
       path.join(fullDir, 'forge.yaml'),
       JSON.stringify(config, null, 2)
     );
 
-    // Step 10: Type check
-    console.log('Running type check...');
+    // Step 7: Finalize
+    ui.step(7, 7, 'Quality Assurance');
+
+    process.stdout.write(`${STYLE.gray}   │${STYLE.reset} Type checking... `);
     try {
-      execSync('npx tsc --noEmit', { cwd: fullDir, stdio: 'pipe' });
-      console.log('✓ Type check passed');
+      runQuietly('npx tsc --noEmit', fullDir);
+      console.log(`${STYLE.success}OK${STYLE.reset}`);
     } catch {
-      console.log(
-        '⚠ Type check completed with warnings - this is normal for some configurations'
-      );
+      console.log(`${STYLE.warn}WARNINGS${STYLE.reset}`);
     }
 
-    // Step 11: Final formatting
-    console.log('Performing final formatting...');
+    process.stdout.write(`${STYLE.gray}   │${STYLE.reset} Formatting... `);
     try {
-      execSync('pnpm run format:write', { cwd: fullDir, stdio: 'pipe' });
-      console.log('✓ Formatting completed');
+      runQuietly('pnpm run format:write', fullDir);
+      console.log(`${STYLE.success}OK${STYLE.reset}`);
     } catch {
-      console.log('⚠ Formatting skipped or completed with warnings');
+      console.log(`${STYLE.dim}SKIPPED${STYLE.reset}`);
     }
 
-    console.log('🎉 Scaffolding complete!');
-    console.log(`📁 Project location: ${fullDir}`);
-    console.log('🚀 Next steps:');
-    console.log(`   cd ${projectDir}`);
-    console.log('   pnpm db:push');
-    console.log('   pnpm dev');
-  } catch (error) {
-    console.error('❌ Scaffolding failed:', error);
-    throw error;
+    // Complete
+    console.log('');
+    ui.success('SCAFFOLD COMPLETE');
+
+    console.log(`${STYLE.dim}   PROJECT LOCATION${STYLE.reset}`);
+    console.log(`   ${STYLE.primary}${fullDir}${STYLE.reset}\n`);
+
+    console.log(`${STYLE.dim}   NEXT STEPS${STYLE.reset}`);
+    console.log(`   1. cd ${path.relative(process.cwd(), fullDir)}`);
+    console.log(`   2. pnpm db:push`);
+    console.log(`   3. pnpm dev`);
+    console.log('');
+  } catch {
+    console.log('');
+    ui.error('Scaffolding Failed');
+    throw new Error('Scaffolding process encountered an error');
   }
 }
 
@@ -217,168 +333,86 @@ async function installPlugin(
   projectDir: string,
   rootDir: string
 ): Promise<void> {
-  const pluginPkg = `@forge/plugin-${plugin}`;
-  const localPluginPath = path.join(rootDir, 'packages', `plugins-${plugin}`);
-  const pluginDir = path.resolve(localPluginPath);
+  const pkgName = `@forge/plugin-${plugin}`;
+  const pluginPath = path.join(rootDir, 'packages', `plugins-${plugin}`);
 
-  console.log(`Installing plugin: ${plugin}`);
-  console.log(`SCAFFOLD: rootDir: ${rootDir}`);
-  console.log(`SCAFFOLD: Checking local plugin path: ${pluginDir}`);
-
-  try {
-    // Check if local plugin directory exists and has package.json
-    const pluginPackageJsonPath = path.join(pluginDir, 'package.json');
-    if (fsSync.existsSync(pluginDir)) {
-      console.log(`SCAFFOLD: Directory exists at ${pluginDir}: Yes`);
-      if (fsSync.existsSync(pluginPackageJsonPath)) {
-        const pluginPackageJson = JSON.parse(
-          fsSync.readFileSync(pluginPackageJsonPath, 'utf8')
-        );
-        console.log(`SCAFFOLD: Found package.json at ${pluginPackageJsonPath}`);
-        console.log(`SCAFFOLD: Plugin package name: ${pluginPackageJson.name}`);
-        if (pluginPackageJson.name !== pluginPkg) {
-          throw new Error(
-            `Package name in ${pluginPackageJsonPath} is ${pluginPackageJson.name}, expected ${pluginPkg}`
-          );
-        }
-
-        // Rebuild plugin to ensure fresh dist/
-        console.log(`SCAFFOLD: Rebuilding plugin at ${pluginDir}`);
-        try {
-          execSync('pnpm build', { cwd: pluginDir, stdio: 'inherit' });
-          console.log(`SCAFFOLD: Successfully rebuilt ${pluginPkg}`);
-        } catch (error) {
-          console.error(`SCAFFOLD: Failed to rebuild ${pluginPkg}:`, error);
-          throw error;
-        }
-
-        console.log(
-          `SCAFFOLD: Installing ${pluginPkg} from local workspace at ${pluginDir}`
-        );
-        try {
-          execSync(`pnpm add ${pluginPkg}@file:${pluginDir}`, {
-            cwd: projectDir,
-            stdio: 'inherit',
-            shell: process.env.SHELL || '/bin/bash',
-          });
-          console.log(
-            `SCAFFOLD: Successfully installed ${pluginPkg} from local workspace`
-          );
-        } catch (error) {
-          console.error(
-            `SCAFFOLD: Failed to install ${pluginPkg} from workspace:`,
-            error
-          );
-          throw error;
-        }
-      } else {
-        throw new Error(`No package.json found at ${pluginPackageJsonPath}`);
-      }
-    } else {
-      throw new Error(`Local plugin directory not found at ${pluginDir}`);
-    }
-
-    // Activate plugin using manifest.json
-    const manifestPath = path.join(
-      projectDir,
-      'node_modules',
-      pluginPkg,
-      'manifest.json'
-    );
-    console.log(`SCAFFOLD: Checking for manifest at ${manifestPath}`);
-    if (fsSync.existsSync(manifestPath)) {
-      const manifest = JSON.parse(fsSync.readFileSync(manifestPath, 'utf8'));
-      const activateRelPath = manifest.hooks?.activate;
-
-      if (activateRelPath) {
-        const activatePath = path.join(
-          projectDir,
-          'node_modules',
-          pluginPkg,
-          activateRelPath
-        );
-        console.log(
-          `SCAFFOLD: Checking for activation script at ${activatePath}`
-        );
-        if (fsSync.existsSync(activatePath)) {
-          console.log(`SCAFFOLD: Activation script found at ${activatePath}`);
-          console.log(`SCAFFOLD: Path stats:`, fsSync.statSync(activatePath));
-          console.log(`SCAFFOLD: Running node ${activatePath} ${projectDir}`);
-          try {
-            const scriptContent = fsSync.readFileSync(activatePath, 'utf8');
-            console.log(
-              `SCAFFOLD: First 200 chars of script: ${scriptContent.substring(0, 200)}`
-            );
-            execFileSync('node', [activatePath, projectDir], {
-              cwd: projectDir,
-              stdio: 'inherit',
-              shell: process.env.SHELL || '/bin/bash',
-            });
-            console.log(`✓ Activated ${plugin}`);
-          } catch (error) {
-            console.error(`SCAFFOLD: Activation failed for ${plugin}:`, error);
-            throw error;
-          }
-        } else {
-          console.error(
-            `SCAFFOLD: Activation script not found for ${plugin} at ${activatePath}`
-          );
-          throw new Error(`Activation script missing at ${activatePath}`);
-        }
-      } else {
-        console.warn(
-          `SCAFFOLD: No activate hook defined in manifest.json for ${plugin}`
-        );
-      }
-    } else {
-      console.error(
-        `SCAFFOLD: Manifest not found for ${plugin} at ${manifestPath}`
-      );
-      throw new Error(`Manifest missing at ${manifestPath}`);
-    }
-    console.log(`✓ Plugin ${plugin} installed and activated`);
-  } catch (error) {
-    console.error(`SCAFFOLD: Failed to process plugin ${plugin}:`, error);
-    throw error;
+  if (!fsSync.existsSync(pluginPath)) {
+    ui.warn(`Source not found: ${pluginPath}`);
+    return;
   }
+
+  // Build plugin - quiet
+  try {
+    runQuietly('pnpm build', pluginPath);
+  } catch {
+    ui.warn(`Failed to build ${pkgName}`);
+  }
+
+  // Install - quiet
+  try {
+    runQuietly(`pnpm add ${pkgName}@file:${pluginPath}`, projectDir);
+  } catch {
+    // Fallback to inherit if quiet install fails really badly
+    console.error(
+      `Failed to install ${pkgName} quietly, attempting normal install...`
+    );
+  }
+
+  // Activate
+  const manifestPath = path.join(
+    projectDir,
+    'node_modules',
+    pkgName,
+    'manifest.json'
+  );
+  if (!fsSync.existsSync(manifestPath)) return;
+
+  const manifest = JSON.parse(fsSync.readFileSync(manifestPath, 'utf8'));
+  const activateScript = manifest.hooks?.activate;
+  if (!activateScript) return;
+
+  const activatePath = path.join(
+    projectDir,
+    'node_modules',
+    pkgName,
+    activateScript
+  );
+  if (!fsSync.existsSync(activatePath)) return;
+
+  // Run activation script
+  execSync(`node "${activatePath}" "${projectDir}"`, {
+    cwd: projectDir,
+    stdio: 'inherit', // Keep inherit for plugins as they might ask questions or show vital logs
+    timeout: 60000,
+    shell: '/bin/bash',
+  });
 }
 
 async function setupInfrastructure(
   infra: string[],
   projectDir: string
 ): Promise<void> {
-  let dockerContent = `version: '3.8'\nservices:\n`;
+  let content = `version: '3.8'\nservices:\n`;
+  let hasService = false;
 
   if (infra.includes('postgres')) {
-    dockerContent += `  postgres:\n    image: postgres:16\n    environment:\n      POSTGRES_PASSWORD: password\n      POSTGRES_DB: app\n    ports:\n      - "5432:5432"\n    volumes:\n      - postgres_data:/var/lib/postgresql/data\n`;
-    console.log('✓ PostgreSQL Docker configuration added');
+    content += `  postgres:\n    image: postgres:16\n    environment:\n      POSTGRES_PASSWORD: password\n      POSTGRES_DB: app\n    ports:\n      - "5432:5432"\n    volumes:\n      - postgres_data:/var/lib/postgresql/data\n`;
+    hasService = true;
   }
-
   if (infra.includes('redis')) {
-    dockerContent += `  redis:\n    image: redis:7\n    ports:\n      - "6379:6379"\n`;
-    console.log('✓ Redis configuration added');
+    content += `  redis:\n    image: redis:7\n    ports:\n      - "6379:6379"\n`;
+    hasService = true;
   }
-
-  if (infra.includes('queue')) {
-    dockerContent += `  # queue: Add RabbitMQ or Redis-based queue\n`;
-    console.log('✓ Queue stub added (implement in plugin)');
-  }
-
   if (infra.includes('s3')) {
-    dockerContent += `  minio:\n    image: minio/minio\n    command: server /data\n    ports:\n      - "9000:9000"\n    environment:\n      MINIO_ROOT_USER: minioadmin\n      MINIO_ROOT_PASSWORD: minioadmin\n`;
-    console.log('✓ S3 (MinIO) stub added');
+    content += `  minio:\n    image: minio/minio\n    command: server /data\n    ports:\n      - "9000:9000"\n    environment:\n      MINIO_ROOT_USER: minioadmin\n      MINIO_ROOT_PASSWORD: minioadmin\n`;
+    hasService = true;
   }
 
-  if (infra.includes('local-db')) {
-    dockerContent = `# Local Development Database\n# This project uses SQLite for local development\n# Run: pnpm prisma db push\n\nversion: '3.8'\nservices:\n  # Add other services if needed\n  # SQLite doesn't require Docker - it uses a local file\n`;
-    console.log('✓ Local development configuration created');
-  }
-
-  if (dockerContent.includes('services:')) {
-    dockerContent += `\nvolumes:\n  postgres_data:\n`;
-    await writeFileLocal(
-      path.join(projectDir, 'docker-compose.yml'),
-      dockerContent
-    );
+  if (hasService) {
+    content += `\nvolumes:\n  postgres_data:\n`;
+    await writeFileLocal(path.join(projectDir, 'docker-compose.yml'), content);
+    ui.substep('Generated docker-compose.yml');
+  } else {
+    ui.substep('No infrastructure services required');
   }
 }

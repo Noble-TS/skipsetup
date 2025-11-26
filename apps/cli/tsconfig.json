@@ -18,8 +18,5 @@
     }
   },
   "include": ["src/**/*.ts"],
-  "exclude": [ "dist/**/*", "node_modules/**/*"], // Add this line
-  "references": [
-    { "path": "../../packages/core" }
-  ]
+  "exclude": [ "dist/**/*", "node_modules/**/*" ]
 }

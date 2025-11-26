@@ -8,7 +8,7 @@
   "main": "dist/cli.js",
   "types": "dist/cli.d.ts",
   "scripts": {
-    "build": "tsc && chmod +x dist/cli.js",
+    "build": "tsc --build",
     "type-check": "tsc --noEmit -p tsconfig.tests.json",
     "lint": "eslint src --ext .ts --fix",
     "test": "vitest --config vitest.config.ts"
@@ -16,6 +16,8 @@
   "dependencies": {
     "@forge/core": "workspace:*",
     "clipanion": "^3.2.1",
+    "figlet": "^1.9.4",
+    "gradient-string": "^3.0.0",
     "js-yaml": "^4.1.0",
     "zod": "^3.23.8"
   },

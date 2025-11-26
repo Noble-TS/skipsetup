@@ -58,3 +58,45 @@ fullstackforge/
 ├── .prettierrc            # Prettier rules
 ├── .gitignore             # Node defaults + .forge/
 └── LICENSE                # MIT
+
+
+
+
+
+with ai extension : 
+skipsetup/
+├── apps/
+│   └── cli/                    # Existing CLI
+│       ├── src/
+│       │   ├── commands/
+│       │   │   ├── init.ts     # Project initialization
+│       │   │   ├── deploy.ts   # Deployment
+│       │   │   ├── secrets.ts  # Secret management
+│       │   │   └── generate.ts # NEW: AI generation command
+│       │   └── core/
+│       │       ├── scaffold.ts # Existing scaffolding
+│       │       └── ai/         # NEW: AI core logic
+│       │           ├── generator.ts
+│       │           ├── context-builder.ts
+│       │           ├── validator.ts
+│       │           └── prompts/
+├── packages/
+│   ├── core/                   # Shared utilities
+│   │   ├── src/
+│   │   │   ├── configs/
+│   │   │   ├── utils/
+│   │   │   └── types/          # NEW: Type definitions for AI context
+│   ├── plugins-stripe/         # Example plugin
+│   │   ├── src/
+│   │   │   ├── hooks/
+│   │   │   └── ai-context.ts   # NEW: Plugin-specific AI context
+│   └── ai-core/                # NEW: AI engine package
+│       ├── src/
+│       │   ├── llm/
+│       │   ├── context/
+│       │   ├── validation/
+│       │   └── templates/
+├── templates/                  # NEW: AI generation templates
+│   ├── components/
+│   ├── pages/
+│   └── hooks/
