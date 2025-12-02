@@ -1,9 +1,9 @@
 {
-  "name": "fullstackforge",
+  "name": "skipsetup-cli",
   "version": "0.1.0",
   "type": "module",
   "bin": {
-    "forge": "dist/cli.js"
+    "skipsetup": "dist/cli.js"
   },
   "main": "dist/cli.js",
   "types": "dist/cli.d.ts",
@@ -14,7 +14,9 @@
     "test": "vitest --config vitest.config.ts"
   },
   "dependencies": {
-    "@forge/core": "workspace:*",
+    "@skipsetup/core": "workspace:*",
+  "@skipsetup/plugin-small": "workspace:*",
+  "@skipsetup/plugin-medium": "workspace:*",
     "clipanion": "^3.2.1",
     "figlet": "^1.9.4",
     "gradient-string": "^3.0.0",

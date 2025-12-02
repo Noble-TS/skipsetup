@@ -39,7 +39,7 @@ export const projectSizes = {
       // 'prisma-distributed',
       // 'admin-panel',
       // 'monitoring-advanced',
-      'stripe', // Maps to @forge/plugin-stripe with platform features
+      'stripe', // Maps to @skipsetup/plugin-stripe with platform features
       // 'resend-marketing',
       // 'socket-enterprise',
       // 'queue',

@@ -5,12 +5,13 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "strict": true,
+    "composite": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "@forge/*": ["packages/*/src"]
+      "@skipsetup/*": ["packages/*/src"]
     },
     "declaration": true,
     "declarationMap": true,

@@ -1,5 +1,9 @@
 import { Command, Option } from 'clipanion';
-import { ProjectSizeSchema, type ProjectSize, projectSizes } from '@forge/core';
+import {
+  ProjectSizeSchema,
+  type ProjectSize,
+  projectSizes,
+} from '@skipsetup/core';
 import { scaffoldProject } from '../core/scaffold.js';
 import figlet from 'figlet';
 import gradient from 'gradient-string';

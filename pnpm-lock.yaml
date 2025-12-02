@@ -63,9 +63,15 @@ importers:
 
   apps/cli:
     dependencies:
-      '@forge/core':
+      '@skipsetup/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@skipsetup/plugin-medium':
+        specifier: workspace:*
+        version: link:../../packages/plugins-medium
+      '@skipsetup/plugin-small':
+        specifier: workspace:*
+        version: link:../../packages/plugins-small
       clipanion:
         specifier: ^3.2.1
         version: 3.2.1(typanion@3.14.0)
@@ -98,17 +104,17 @@ importers:
         specifier: ^2.0.0
         version: 2.1.9(@types/node@20.19.21)(lightningcss@1.30.2)
 
-  mySmall:
+  mylarge2:
     dependencies:
-      '@forge/plugin-small':
-        specifier: file:/home/get/projects/fullstackforge/packages/plugins-small
-        version: file:packages/plugins-small
       '@prisma/client':
         specifier: ^6.6.0
         version: 6.19.0(prisma@6.19.0(magicast@0.3.5)(typescript@5.9.3))(typescript@5.9.3)
       '@react-email/components':
         specifier: ^1.0.1
         version: 1.0.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@skipsetup/plugin-small':
+        specifier: file:/home/get/projects/skipsetup/packages/plugins-small
+        version: file:packages/plugins-small
       '@stripe/react-stripe-js':
         specifier: ^2.8.1
         version: 2.9.0(@stripe/stripe-js@4.10.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -226,7 +232,7 @@ importers:
         specifier: ^16.12.0
         version: 16.12.0
     devDependencies:
-      '@forge/core':
+      '@skipsetup/core':
         specifier: workspace:*
         version: link:../core
       '@types/node':
@@ -245,7 +251,7 @@ importers:
         specifier: ^16.12.0
         version: 16.12.0
     devDependencies:
-      '@forge/core':
+      '@skipsetup/core':
         specifier: workspace:*
         version: link:../core
       '@types/node':
@@ -649,9 +655,6 @@ packages:
   '@eslint/plugin-kit@0.4.0':
     resolution: {integrity: sha512-sB5uyeq+dwCWyPi31B2gQlVlo+j5brPlWx4yZBrEaRo/nhdDE8Xke1gsGgtiBdaBTxuTkceLVuVt/pclrasb0A==, tarball: https://registry.npmjs.org/@eslint/plugin-kit/-/plugin-kit-0.4.0.tgz}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
-
-  '@forge/plugin-small@file:packages/plugins-small':
-    resolution: {directory: packages/plugins-small, type: directory}
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==, tarball: https://registry.npmjs.org/@humanfs/core/-/core-0.19.1.tgz}
@@ -1239,6 +1242,9 @@ packages:
 
   '@selderee/plugin-htmlparser2@0.11.0':
     resolution: {integrity: sha512-P33hHGdldxGabLFjPPpaTxVolMrzrcegejx+0GxjrIb9Zv48D8yAIA/QTDR2dFl7Uz7urX8aX6+5bCZslr+gWQ==, tarball: https://registry.npmjs.org/@selderee/plugin-htmlparser2/-/plugin-htmlparser2-0.11.0.tgz}
+
+  '@skipsetup/plugin-small@file:packages/plugins-small':
+    resolution: {directory: packages/plugins-small, type: directory}
 
   '@standard-schema/spec@1.0.0':
     resolution: {integrity: sha512-m2bOd0f2RT9k8QJx1JN85cZYyH1RqFBdlwtkSlf4tBDYLCiiZnv1fIIwacK6cqwXavOydf0NPToMQgpKq+dVlA==, tarball: https://registry.npmjs.org/@standard-schema/spec/-/spec-1.0.0.tgz}
@@ -4056,10 +4062,6 @@ snapshots:
       '@eslint/core': 0.16.0
       levn: 0.4.1
 
-  '@forge/plugin-small@file:packages/plugins-small':
-    dependencies:
-      stripe: 16.12.0
-
   '@humanfs/core@0.19.1': {}
 
   '@humanfs/node@0.16.7':
@@ -4505,6 +4507,10 @@ snapshots:
     dependencies:
       domhandler: 5.0.3
       selderee: 0.11.0
+
+  '@skipsetup/plugin-small@file:packages/plugins-small':
+    dependencies:
+      stripe: 16.12.0
 
   '@standard-schema/spec@1.0.0': {}
 

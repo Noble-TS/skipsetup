@@ -5,7 +5,7 @@ import { SecretsCommand } from './commands/secrets.js';
 import { DeployCommand } from './commands/deploy.js';
 
 const cli = new Cli({
-  binaryName: 'forge',
+  binaryName: 'skipsetup',
   binaryVersion: '0.1.0',
 });
 

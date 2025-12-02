@@ -1,9 +1,9 @@
-# fullstackforge
+# skipsetup
 Build full-stack apps that are the right size, right now. Stop over-engineering weekend projects or under-building SaaS apps. Choose your size—small, medium, or large—and get a tailored stack with auth, payments, and deployment ready in minutes. Start coding what matters, not the setup.
 
 
 
-fullstackforge/
+skipsetup/
 ├── apps/                  # Standalone apps (e.g., CLI entry)
 │   └── cli/               # NPM-published CLI package
 │       ├── src/           # Source code
@@ -18,7 +18,7 @@ fullstackforge/
 │       │   │   └── secrets.ts
 │       │   └── plugins/   # Plugin loader/resolver
 │       │       └── loader.ts
-│       ├── package.json   # { "name": "fullstackforge", "bin": { "forge": "dist/cli.js" } }
+│       ├── package.json   # { "name": "skipsetup", "bin": { "skipsetup": "dist/cli.js" } }
 │       ├── tsconfig.json  # Strict TS config
 │       └── tests/         # Vitest suites
 │           └── scaffold.test.ts
@@ -32,17 +32,17 @@ fullstackforge/
 │       │   └── index.ts
 │       ├── package.json
 │       └── tsconfig.json
-│   └── plugins-example/   # Template for community plugins (e.g., @forge/plugin-stripe)
+│   └── plugins-example/   # Template for community plugins (e.g., @skipsetup/plugin-stripe)
 │       ├── src/
 │       │   ├── manifest.json
 │       │   └── hooks/
 │       │       └── afterInstall.ts
-│       └── package.json   # { "name": "@forge/plugin-stripe" }
+│       └── package.json   # { "name": "@skipsetup/plugin-stripe" }
 ├── examples/              # Demo projects (small/medium/large)
 │   ├── small-saas/        # Minimal scaffold output
 │   ├── medium-dashboard/  # With admin/plugins
 │   └── large-enterprise/  # Full infra
-│       └── forge.yaml     # Generated manifest
+│       └── skipsetup.yaml     # Generated manifest
 ├── docs/                  # Documentation
 │   ├── README.md          # Project overview, install, usage
 │   ├── CONTRIBUTING.md    # Plugin dev guide
@@ -56,7 +56,7 @@ fullstackforge/
 ├── tsconfig.json          # Base TS (strict: true, paths: {"@/*": ["./*"]})
 ├── .eslintrc.js           # ESLint + @typescript-eslint
 ├── .prettierrc            # Prettier rules
-├── .gitignore             # Node defaults + .forge/
+├── .gitignore             # Node defaults + .skipsetup/
 └── LICENSE                # MIT
 
 

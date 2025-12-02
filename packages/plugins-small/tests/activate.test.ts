@@ -1,13 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { activate } from '../src/hooks/activate';
 import { execSync } from 'child_process';
-import { writeFile } from '@forge/core/utils/file';
+import { writeFile } from '@skipsetup/core/utils/file';
 
 vi.mock('child_process', () => ({
   execSync: vi.fn(),
 }));
 
-vi.mock('@forge/core/utils/file', () => ({
+vi.mock('@skipsetup/core/utils/file', () => ({
   writeFile: vi.fn(),
 }));
 

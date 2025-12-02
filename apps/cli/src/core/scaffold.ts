@@ -3,7 +3,7 @@ import { generateKiroContext } from './kiro-context-generator-ss.js';
 import { execSync } from 'child_process';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import { projectSizes } from '@forge/core';
+import { projectSizes } from '@skipsetup/core';
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import { performance } from 'perf_hooks';
@@ -380,7 +380,7 @@ export const api = createTRPCReact<AppRouter>();
     ui.step(6, 7, 'Provision Local Infrastructure');
     await setupInfrastructure(config.infra, fullDir);
     await writeFileLocal(
-      path.join(fullDir, 'forge.yaml'),
+      path.join(fullDir, 'skipsetup.yaml'),
       JSON.stringify(config, null, 2)
     );
 
@@ -449,7 +449,7 @@ async function installPlugin(
   projectDir: string,
   rootDir: string
 ): Promise<void> {
-  const pkgName = `@forge/plugin-${plugin}`;
+  const pkgName = `@skipsetup/plugin-${plugin}`;
   const pluginPath = path.join(rootDir, 'packages', `plugins-${plugin}`);
 
   if (!fsSync.existsSync(pluginPath)) {

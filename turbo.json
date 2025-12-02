@@ -5,7 +5,7 @@
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**", "tsconfig.tsbuildinfo"],
-      "env": ["FORGE_ENCRYPT_KEY"]
+      "env": ["skipsetup_ENCRYPT_KEY"]
     },
     "dev": {
       "cache": false,
@@ -14,7 +14,7 @@
     "test": {
       "dependsOn": ["build"],
       "outputs": ["coverage/**"],
-      "env": ["FORGE_ENCRYPT_KEY"]
+      "env": ["skipsetup_ENCRYPT_KEY"]
     },
     "lint": {
       "outputs": []

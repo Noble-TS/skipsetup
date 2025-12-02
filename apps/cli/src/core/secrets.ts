@@ -3,10 +3,10 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { Buffer } from 'buffer'; // Add this import
 
-const SECRETS_PATH = path.join('.forge', 'secrets.json.enc');
+const SECRETS_PATH = path.join('.skipsetup', 'secrets.json.enc');
 const ALGORITHM = 'aes-256-cbc';
 const KEY = Buffer.from(
-  process.env.FORGE_ENCRYPT_KEY ||
+  process.env.skipsetup_ENCRYPT_KEY ||
     'fallback-32-byte-key-for-dev-only!!'.padEnd(32, '!')
 ).slice(0, 32);
 

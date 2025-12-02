@@ -1,9 +1,10 @@
 {
-  "name": "@forge/core",
+  "name": "@skipsetup/core",
   "version": "0.1.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "test": "vitest",
+  "type": "module",
   "scripts": {
     "build": "tsc --build",
     "lint": "eslint src --ext .ts --fix"

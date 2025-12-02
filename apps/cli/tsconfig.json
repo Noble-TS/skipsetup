@@ -8,15 +8,16 @@
     "module": "node16",
     "target": "es2022",
     "declaration": true,
+    "declarationMap": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    "baseUrl": ".",
-    "paths": {
-      "@forge/core": ["../../packages/core/dist/index.d.ts"],
-      "@forge/core/*": ["../../packages/core/dist/*.d.ts"]
-    }
+    "noEmitOnError": true
   },
-  "include": ["src/**/*.ts"],
-  "exclude": [ "dist/**/*", "node_modules/**/*" ]
+  "references": [
+    { "path": "../../packages/core" },
+    { "path": "../../packages/plugins-small" },
+    { "path": "../../packages/plugins-medium" }
+  ],
+  "include": ["src/**/*.ts"]
 }

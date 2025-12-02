@@ -1,5 +1,5 @@
 {
-  "name": "@forge/plugin-medium",
+  "name": "@skipsetup/plugin-medium",
   "version": "0.1.0",
   "hooks": {
     "activate": "dist/hooks/activate.js"

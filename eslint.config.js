@@ -2,48 +2,38 @@ import js from '@eslint/js';
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import prettierPlugin from 'eslint-plugin-prettier';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export default [
   js.configs.recommended,
 
-  // Ignore patterns (includes eslint config itself)
   {
     ignores: [
       '**/dist/**',
       '**/node_modules/**',
-      '**/*.d.ts',
       '**/*.map',
-      'eslint.config.js',
-      '**/apps/*/eslint.config.js', // ignore per-app configs
-      '**/packages/*/eslint.config.js',
+      '**/eslint.config.js',
+      '**/*.d.ts',
     ],
   },
 
-  // TypeScript + JavaScript configuration
   {
-    files: ['**/*.{ts,tsx,js,jsx}'],
+    files: ['**/*.{ts,tsx}'], // Only lint TS files, not JS
     languageOptions: {
       parser: tsParser,
       parserOptions: {
-        // 👇 include both main + test configs
-        project: ['./tsconfig.json', './tsconfig.test.json'],
-        tsconfigRootDir: import.meta.dirname,
-        projectService: true,
+        project: ['./tsconfig.json'],
+        tsconfigRootDir: __dirname,
+        projectService: true, // required for project references
+        createDefaultProgram: true,
       },
       globals: {
         console: 'readonly',
         process: 'readonly',
-        global: 'readonly',
-        __dirname: 'readonly',
-        __filename: 'readonly',
-        // Test globals (Vitest/Jest)
-        describe: 'readonly',
-        it: 'readonly',
-        expect: 'readonly',
-        beforeAll: 'readonly',
-        afterAll: 'readonly',
-        beforeEach: 'readonly',
-        afterEach: 'readonly',
       },
     },
     plugins: {
