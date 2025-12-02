@@ -1,5 +1,5 @@
-// apps/cli/src/core/scaffold.ts
-
+import { generateComprehensiveKiroContext } from './kiro-context-generator.js';
+import { generateKiroContext } from './kiro-context-generator-ss.js';
 import { execSync } from 'child_process';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
@@ -7,6 +7,7 @@ import { projectSizes } from '@forge/core';
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import { performance } from 'perf_hooks';
+import { Buffer } from 'buffer';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,15 +20,14 @@ const STYLE = {
   bold: '\x1b[1m',
   dim: '\x1b[2m',
   italic: '\x1b[3m',
-  // Modern RGB Colors
-  primary: '\x1b[38;2;99;102;241m', // Indigo 500
-  accent: '\x1b[38;2;6;182;212m', // Cyan 500
-  success: '\x1b[38;2;34;197;94m', // Green 500
-  warn: '\x1b[38;2;234;179;8m', // Yellow 500
-  error: '\x1b[38;2;239;68;68m', // Red 500
-  gray: '\x1b[38;2;107;114;128m', // Gray 500
+
+  primary: '\x1b[38;2;99;102;241m',
+  accent: '\x1b[38;2;6;182;212m',
+  success: '\x1b[38;2;34;197;94m',
+  warn: '\x1b[38;2;234;179;8m',
+  error: '\x1b[38;2;239;68;68m',
+  gray: '\x1b[38;2;107;114;128m',
   white: '\x1b[38;2;255;255;255m',
-  // Backgrounds for Badges
   bgPrimary: '\x1b[48;2;99;102;241m',
   bgSuccess: '\x1b[48;2;34;197;94m',
   bgWarn: '\x1b[48;2;234;179;8m',
@@ -94,11 +94,31 @@ async function measure<T>(fn: () => Promise<T> | T): Promise<[T, string]> {
 
 function runQuietly(command: string, cwd: string) {
   try {
-    execSync(command, { cwd, stdio: 'pipe' }); // pipe suppresses output unless we read it
-  } catch (error: any) {
-    // Only show output if it fails
-    console.log(error.stdout?.toString());
-    console.error(error.stderr?.toString());
+    execSync(command, { cwd, stdio: 'pipe' });
+  } catch (error) {
+    // Type assertion for Node.js errors with stdout/stderr
+    const execError = error as {
+      stdout?: Buffer | string;
+      stderr?: Buffer | string;
+      message?: string;
+    };
+
+    if (execError.stdout) {
+      console.log(
+        typeof execError.stdout === 'string'
+          ? execError.stdout
+          : execError.stdout.toString()
+      );
+    }
+
+    if (execError.stderr) {
+      console.error(
+        typeof execError.stderr === 'string'
+          ? execError.stderr
+          : execError.stderr.toString()
+      );
+    }
+
     throw error;
   }
 }
@@ -174,6 +194,10 @@ export async function scaffoldProject(
       '@trpc/client': '^11.6.0',
       '@trpc/next': '^11.6.0',
       '@trpc/react-query': '^11.6.0',
+      '@react-email/components': '^1.0.1',
+      'tailwind-merge': '^3.4.0',
+      'better-auth': '^1.4.3',
+      'lucide-react': '^0.555.0',
       '@trpc/server': '^11.6.0',
       superjson: '^2.2.2',
       resend: '^4.0.0',
@@ -212,8 +236,6 @@ export async function scaffoldProject(
     ui.substep('Running pnpm install (network-concurrency: 1)...');
 
     const [, installTime] = await measure(() => {
-      // We keep stdio inherit here as installs can be long and users trust visible movement
-      // But we prefix it nicely
       try {
         execSync('pnpm install --prefer-offline --network-concurrency 1', {
           cwd: fullDir,
@@ -282,6 +304,78 @@ export const api = createTRPCReact<AppRouter>();
       ui.substep('No plugins requested');
     }
 
+    ui.step(8, 8, 'Generating AI Development Context');
+
+    try {
+      // Determine which Kiro context generator to use based on project size
+      if (size === 'small') {
+        // Small project: Minimal MVP with Auth + DB basics - use comprehensive generator
+        ui.substep(
+          'Using comprehensive Kiro context generator for small project...'
+        );
+
+        // Capture plugin data for comprehensive context
+        const pluginData = {
+          files: await analyzeGeneratedFiles(projectDir),
+          plugins: config.plugins, // ['small'] - this is just the plugin type
+          modules: config.modules, // ['auth', 'db', 'email-resend']
+          infra: config.infra, // ['local-db']
+          description: config.description,
+        };
+
+        // Config for small projects (comprehensive generator)
+        const smallConfig = {
+          projectName: path.basename(projectDir),
+          size: 'small',
+          modules: config.modules,
+          plugins: config.plugins,
+          infra: config.infra,
+          description: config.description,
+        };
+
+        await generateComprehensiveKiroContext(
+          projectDir,
+          smallConfig,
+          pluginData
+        );
+        ui.success('Comprehensive Kiro AI context generated for MVP project');
+      } else if (size === 'medium') {
+        // Medium project: SaaS-ready with admin + monitoring + Stripe - use simpler generator
+        ui.substep('Using basic Kiro context generator for medium project...');
+
+        // Simple config for medium projects (basic generator)
+        const mediumConfig = {
+          projectName: path.basename(projectDir),
+          size: 'medium',
+          modules: config.modules, // ['auth', 'db', 'admin', 'stripe', 'email', 'monitoring-dashboard']
+          plugins: config.plugins, // ['medium'] - this is just the plugin type
+          infra: config.infra, // ['postgres', 'redis']
+          description: config.description,
+        };
+
+        await generateKiroContext(projectDir, mediumConfig);
+        ui.success('Basic Kiro AI context generated for SaaS-ready project');
+      } else {
+        // Fallback for 'large' or any other size - use comprehensive generator
+        ui.substep('Using comprehensive Kiro context generator...');
+
+        const pluginData = {
+          files: await analyzeGeneratedFiles(projectDir),
+          plugins: config.plugins,
+          modules: config.modules,
+          infra: config.infra,
+          description: config.description,
+        };
+
+        await generateComprehensiveKiroContext(projectDir, config, pluginData);
+        ui.success('Kiro AI context generated');
+      }
+    } catch (error) {
+      ui.warn(
+        `Kiro context generation had issues: ${error instanceof Error ? error.message : error}`
+      );
+    }
+
     // Step 6: Infrastructure
     ui.step(6, 7, 'Provision Local Infrastructure');
     await setupInfrastructure(config.infra, fullDir);
@@ -327,7 +421,29 @@ export const api = createTRPCReact<AppRouter>();
     throw new Error('Scaffolding process encountered an error');
   }
 }
+async function analyzeGeneratedFiles(projectDir: string) {
+  const files: Record<string, string> = {};
 
+  // Analyze key files that were generated
+  const keyFiles = [
+    'src/env.js',
+    'prisma/schema.prisma',
+    'src/server/db.ts',
+    'src/server/better-auth/config.ts',
+    'src/server/api/trpc.ts',
+    'src/trpc/react.tsx',
+    'src/app/_components/auth/SignInForm.tsx',
+  ];
+
+  for (const file of keyFiles) {
+    const fullPath = path.join(projectDir, file);
+    if (fsSync.existsSync(fullPath)) {
+      files[file] = await fs.readFile(fullPath, 'utf8');
+    }
+  }
+
+  return files;
+}
 async function installPlugin(
   plugin: string,
   projectDir: string,
@@ -382,7 +498,7 @@ async function installPlugin(
   // Run activation script
   execSync(`node "${activatePath}" "${projectDir}"`, {
     cwd: projectDir,
-    stdio: 'inherit', // Keep inherit for plugins as they might ask questions or show vital logs
+    stdio: 'inherit',
     timeout: 60000,
     shell: '/bin/bash',
   });

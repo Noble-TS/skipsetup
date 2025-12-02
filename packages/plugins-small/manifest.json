@@ -1,0 +1,7 @@
+{
+  "name": "@forge/plugin-small",
+  "version": "0.1.0",
+  "hooks": {
+    "activate": "dist/hooks/activate.js"
+  }
+}

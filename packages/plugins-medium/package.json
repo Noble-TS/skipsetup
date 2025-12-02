@@ -1,5 +1,5 @@
 {
-  "name": "@forge/plugin-stripe",
+  "name": "@forge/plugin-medium",
   "version": "0.1.0",
   "description": "Stripe payments integration plugin for FullstackForge",
   "main": "dist/index.js",

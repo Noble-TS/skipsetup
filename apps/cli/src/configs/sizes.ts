@@ -3,7 +3,7 @@ export const projectSizes = {
   small: {
     description: 'Minimal MVP: Auth + DB basics.',
     modules: ['auth', 'db'],
-    plugins: ['better-auth-basic', 'prisma-basic'],
+    plugins: ['better-auth-basic', 'email-resend', 'prisma-basic'],
     infra: ['local-db'],
     featureLevels: {
       auth: 'basic',
@@ -16,11 +16,12 @@ export const projectSizes = {
     description: 'SaaS-ready: Admin + monitoring.',
     modules: ['auth', 'db', 'admin', 'monitoring'],
     plugins: [
-      'better-auth-social',
+      'better-auth',
+      'email-resend',
       'prisma-postgres',
       'admin-panel',
       'monitoring-basic',
-      'stripe-subscriptions',
+      'stripe-checkout and transactions',
     ],
     infra: ['postgres', 'redis'],
     featureLevels: {

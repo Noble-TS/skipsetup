@@ -1,5 +1,5 @@
 {
-  "name": "@forge/plugin-stripe",
+  "name": "@forge/plugin-medium",
   "version": "0.1.0",
   "hooks": {
     "activate": "dist/hooks/activate.js"

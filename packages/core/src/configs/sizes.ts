@@ -14,14 +14,14 @@ export const projectSizes: Record<
 > = {
   small: {
     description: 'Minimal MVP: Auth + DB basics.',
-    modules: ['auth', 'db'],
-    plugins: ['stripe'],
+    modules: ['auth', 'db', 'email-resend'],
+    plugins: ['small'],
     infra: ['local-db'],
   },
   medium: {
     description: 'SaaS-ready: Admin + monitoring.',
-    modules: ['auth', 'db', 'admin', 'monitoring'],
-    plugins: ['email-password', 'social-login', 'admin-panel'],
+    modules: ['auth', 'db', 'admin', 'stripe', 'email', 'monitoring-dashboard'],
+    plugins: ['medium'],
     infra: ['postgres', 'redis'],
   },
   large: {
@@ -32,7 +32,7 @@ export const projectSizes: Record<
       // 'social-login',
       // 'admin-panel',
       // 'org-management',
-      'stripe',
+      'medium',
     ],
     infra: ['postgres', 'redis', 'queue', 's3'],
   },
