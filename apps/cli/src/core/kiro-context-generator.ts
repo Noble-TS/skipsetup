@@ -1503,7 +1503,7 @@ async function generateSpecifications(
 
 ## Project Information
 - **Size**: ${projectSize}
-- **Modules**: ${projectModules.join(', ')}
+- **Modules**: ${Array.isArray(projectModules) ? projectModules.join(', ') : 'No modules specified'}
 - **Generated**: ${new Date().toISOString()}
 
 ## tRPC API Endpoints
@@ -2040,7 +2040,7 @@ export async function checkDatabaseHealth() {
 
 ## Project Information
 - **Project Size**: ${projectSize}
-- **Modules**: ${projectModules.join(', ')}
+- **Modules**: ${Array.isArray(projectModules) ? projectModules.join(', ') : 'No modules specified'}
 - **Generated**: ${new Date().toISOString()}
 
 ## Available Specifications
