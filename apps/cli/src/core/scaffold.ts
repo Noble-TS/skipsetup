@@ -2,15 +2,15 @@ import { generateComprehensiveKiroContext } from './kiro-context-generator.js';
 import { generateKiroContext } from './kiro-context-generator-ss.js';
 import { execSync } from 'child_process';
 import * as path from 'path';
-// import { fileURLToPath } from 'url';
+import { fileURLToPath } from 'url';
 import { projectSizes } from '@skipsetup/core';
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import { performance } from 'perf_hooks';
 import { Buffer } from 'buffer';
 
-// const __filename = fileURLToPath(import.meta.url);
-// const __dirname = path.dirname(__filename);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 // const rootDir = path.resolve(__dirname, '../../../..');
 
 // --- UI & TERMINAL UTILITIES ---
@@ -456,6 +456,14 @@ async function installPlugin(
   const pkgName = `@skipsetup/plugin-${plugin}`;
   const localPluginPath = path.join(rootDir, 'packages', `plugins-${plugin}`);
   const hasLocalPlugin = fsSync.existsSync(localPluginPath);
+  // DEBUG: Log the paths
+  console.log('DEBUG - rootDir:', rootDir);
+  console.log('DEBUG - process.cwd():', process.cwd());
+  console.log('DEBUG - __dirname:', __dirname);
+
+  console.log('DEBUG - Looking for plugin at:', localPluginPath);
+
+  console.log('DEBUG - Local plugin exists:', hasLocalPlugin);
 
   if (hasLocalPlugin) {
     ui.substep(`Building local plugin: ${pkgName}`);
