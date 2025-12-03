@@ -452,35 +452,25 @@ async function installPlugin(
   const pkgName = `@skipsetup/plugin-${plugin}`;
   const pluginPath = path.join(rootDir, 'packages', `plugins-${plugin}`);
 
-  let isLocal = false;
-
-  if (fsSync.existsSync(pluginPath)) {
-    // Local build (dev mode)
-    isLocal = true;
-
-    try {
-      runQuietly('pnpm build', pluginPath);
-    } catch {
-      ui.warn(`Failed to build ${pkgName}`);
-    }
-  }
-
-  // Install plugin
   try {
-    if (isLocal) {
+    if (fsSync.existsSync(pluginPath)) {
+      runQuietly('pnpm build', pluginPath);
       runQuietly(`pnpm add ${pkgName}@file:${pluginPath}`, projectDir);
+      ui.info('Plugin', `Installed local plugin ${pkgName}`);
     } else {
-      // Install from npm registry
+      ui.info(
+        'Plugin',
+        `Local path not found, installing ${pkgName} from npm...`
+      );
       runQuietly(`pnpm add ${pkgName}`, projectDir);
+      ui.info('Plugin', `Installed plugin ${pkgName} from npm`);
     }
   } catch (err) {
-    console.error(
-      `Failed to install ${pkgName}: ${err}. You may need to install manually.`
-    );
+    console.error(`Failed to install plugin ${pkgName}:`, err);
     return;
   }
 
-  // Activate plugin
+  // Activate plugin if manifest exists
   const manifestPath = path.join(
     projectDir,
     'node_modules',
