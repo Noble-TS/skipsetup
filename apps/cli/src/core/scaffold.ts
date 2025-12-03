@@ -452,25 +452,38 @@ async function installPlugin(
   const pkgName = `@skipsetup/plugin-${plugin}`;
   const pluginPath = path.join(rootDir, 'packages', `plugins-${plugin}`);
 
-  try {
-    if (fsSync.existsSync(pluginPath)) {
+  if (fsSync.existsSync(pluginPath)) {
+    // Build local plugin
+    try {
       runQuietly('pnpm build', pluginPath);
+    } catch {
+      ui.warn(`Failed to build ${pkgName}`);
+    }
+
+    // Install local
+    try {
       runQuietly(`pnpm add ${pkgName}@file:${pluginPath}`, projectDir);
-      ui.info('Plugin', `Installed local plugin ${pkgName}`);
-    } else {
-      ui.info(
-        'Plugin',
-        `Local path not found, installing ${pkgName} from npm...`
+    } catch {
+      console.error(
+        `Failed to install ${pkgName} from local path, falling back to npm`
       );
       runQuietly(`pnpm add ${pkgName}`, projectDir);
-      ui.info('Plugin', `Installed plugin ${pkgName} from npm`);
     }
-  } catch (err) {
-    console.error(`Failed to install plugin ${pkgName}:`, err);
-    return;
+  } else {
+    // Install from npm if local path not found
+    ui.info(
+      'Plugin',
+      `Local path not found, installing ${pkgName} from npm...`
+    );
+    try {
+      runQuietly(`pnpm add ${pkgName}`, projectDir);
+      ui.info('Plugin', `Installed plugin ${pkgName} from npm`);
+    } catch (err) {
+      console.error(`Failed to install ${pkgName} from npm`, err);
+    }
   }
 
-  // Activate plugin if manifest exists
+  // Activate hook if exists
   const manifestPath = path.join(
     projectDir,
     'node_modules',
