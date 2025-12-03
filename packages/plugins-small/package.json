@@ -31,5 +31,8 @@
   "files": [
     "dist",
     "manifest.json"
-  ]
+  ],
+  "bin": {
+    "skipsetup-plugin-small": "dist/cli.js"
+  }
 }

@@ -11,7 +11,7 @@ import { Buffer } from 'buffer';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-// const rootDir = path.resolve(__dirname, '../../../..');
+const rootDir = path.resolve(__dirname, '../../../..');
 
 // --- UI & TERMINAL UTILITIES ---
 
@@ -152,12 +152,8 @@ export async function scaffoldProject(
   const config = projectSizes[size as keyof typeof projectSizes];
   const fullDir = path.resolve(projectDir);
 
-  // FIX: Use process.cwd() to get the monorepo root
-  const monorepoRoot = process.cwd();
-
   ui.header(`Scaffold Project: ${size}`);
   ui.info('Target', fullDir);
-  ui.info('Monorepo Root', monorepoRoot);
   ui.info(
     'Config',
     `${config.plugins.length} plugins, ${config.infra.length} services`
@@ -299,8 +295,7 @@ export const api = createTRPCReact<AppRouter>();
       for (const plugin of config.plugins) {
         try {
           ui.substep(`Processing: ${plugin}`);
-          // Pass monorepoRoot
-          await installPlugin(plugin, fullDir, monorepoRoot);
+          await installPlugin(plugin, fullDir, rootDir);
         } catch {
           ui.warn(`Plugin ${plugin} skipped due to errors`);
         }
@@ -308,6 +303,7 @@ export const api = createTRPCReact<AppRouter>();
     } else {
       ui.substep('No plugins requested');
     }
+
     ui.step(8, 8, 'Generating AI Development Context');
 
     try {
@@ -454,33 +450,69 @@ async function installPlugin(
   rootDir: string
 ): Promise<void> {
   const pkgName = `@skipsetup/plugin-${plugin}`;
+
+  // Calculate and verify the local plugin path
   const localPluginPath = path.join(rootDir, 'packages', `plugins-${plugin}`);
   const hasLocalPlugin = fsSync.existsSync(localPluginPath);
-  // DEBUG: Log the paths
-  console.log('DEBUG - rootDir:', rootDir);
-  console.log('DEBUG - process.cwd():', process.cwd());
-  console.log('DEBUG - __dirname:', __dirname);
 
-  console.log('DEBUG - Looking for plugin at:', localPluginPath);
-
-  console.log('DEBUG - Local plugin exists:', hasLocalPlugin);
+  // Debug logging for paths
+  ui.substep(`Checking for plugin: ${pkgName}`);
+  ui.substep(`  rootDir: ${rootDir}`);
+  ui.substep(`  localPluginPath: ${localPluginPath}`);
+  ui.substep(`  exists: ${hasLocalPlugin}`);
 
   if (hasLocalPlugin) {
-    ui.substep(`Building local plugin: ${pkgName}`);
-    try {
-      runQuietly('pnpm build', localPluginPath);
-      runQuietly(`pnpm add ${pkgName}@file:${localPluginPath}`, projectDir);
-      ui.substep(`Installed local build of ${pkgName}`);
-    } catch {
-      ui.warn(`Local build failed for ${pkgName}. Falling back to npm...`);
-      // Attempt to install from npm if local build fails
+    ui.substep(`Found local source at: ${localPluginPath}`);
+
+    // First, verify the plugin has package.json and build script
+    const pluginPackageJson = path.join(localPluginPath, 'package.json');
+    const hasPackageJson = fsSync.existsSync(pluginPackageJson);
+
+    if (!hasPackageJson) {
+      ui.warn(`Local plugin missing package.json. Falling back to npm...`);
       installFromNpm(pkgName, projectDir);
+    } else {
+      try {
+        // Read package.json to check for build script
+        const pkgContent = JSON.parse(
+          await fs.readFile(pluginPackageJson, 'utf8')
+        );
+        const hasBuildScript = pkgContent.scripts && pkgContent.scripts.build;
+
+        if (!hasBuildScript) {
+          ui.warn(
+            `Local plugin has no build script. Trying to install directly...`
+          );
+          runQuietly(`pnpm add ${pkgName}@file:${localPluginPath}`, projectDir);
+          ui.substep(`Installed local plugin directly: ${pkgName}`);
+        } else {
+          // Try to build and install
+          ui.substep(`Building local plugin: ${pkgName}`);
+          runQuietly('pnpm build', localPluginPath);
+
+          // Verify build output exists
+          const distPath = path.join(localPluginPath, 'dist');
+          if (!fsSync.existsSync(distPath)) {
+            throw new Error('Build failed - no dist directory created');
+          }
+
+          ui.substep(`Installing local build...`);
+          runQuietly(`pnpm add ${pkgName}@file:${localPluginPath}`, projectDir);
+          ui.substep(`✓ Installed local build: ${pkgName}`);
+        }
+      } catch {
+        ui.warn(`Local build/install failed`);
+        ui.warn(`Falling back to npm registry...`);
+        installFromNpm(pkgName, projectDir);
+      }
     }
   } else {
-    // Local path doesn't exist, install directly from npm
-    ui.substep(`Local source not found, installing ${pkgName} from npm...`);
+    ui.substep(`No local source found at: ${localPluginPath}`);
+    ui.substep(`Installing from npm registry...`);
     installFromNpm(pkgName, projectDir);
   }
+
+  // Always try to activate hooks
   activatePluginHook(pkgName, projectDir);
 }
 
