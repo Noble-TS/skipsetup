@@ -456,46 +456,62 @@ async function installPlugin(
   if (hasLocalPlugin) {
     ui.substep(`Building local plugin: ${pkgName}`);
     try {
+      // Try local build first
       runQuietly('pnpm build', localPluginPath);
       runQuietly(`pnpm add ${pkgName}@file:${localPluginPath}`, projectDir);
       ui.substep(`Installed local build of ${pkgName}`);
     } catch {
-      ui.warn(`Local build failed for ${pkgName}. Falling back to npm...`);
-      // Attempt to install from npm if local build fails
-      installFromNpm(pkgName, projectDir);
+      // Log the actual error instead of swallowing it
+      ui.warn(`Local build failed for ${pkgName}:`);
+      ui.warn(`Falling back to npm...`);
+      // Now try npm
+      await installFromNpm(pkgName, projectDir);
     }
   } else {
     // Local path doesn't exist, install directly from npm
     ui.substep(`Local source not found, installing ${pkgName} from npm...`);
-    installFromNpm(pkgName, projectDir);
+    await installFromNpm(pkgName, projectDir);
   }
+
+  // Always try to activate hooks
   activatePluginHook(pkgName, projectDir);
 }
 
-// Helper function to handle npm installation
-function installFromNpm(pkgName: string, projectDir: string): void {
+// ADD THIS FUNCTION - it's missing from your code
+async function installFromNpm(
+  pkgName: string,
+  projectDir: string
+): Promise<void> {
   try {
+    ui.substep(`Installing ${pkgName} from npm registry...`);
     runQuietly(`pnpm add ${pkgName}`, projectDir);
-    ui.substep(`✓ Installed ${pkgName} from npm registry`);
+    ui.substep(`Successfully installed ${pkgName} from npm`);
   } catch {
-    ui.error(`Failed to install ${pkgName} from npm registry.`);
+    ui.error(`Failed to install ${pkgName} from npm`);
   }
 }
 
-// Helper function to run the plugin's activation hook
 function activatePluginHook(pkgName: string, projectDir: string): void {
-  const manifestPath = path.join(
-    projectDir,
-    'node_modules',
-    pkgName,
-    'manifest.json'
-  );
-  if (!fsSync.existsSync(manifestPath)) return;
-
   try {
+    const manifestPath = path.join(
+      projectDir,
+      'node_modules',
+      pkgName,
+      'manifest.json'
+    );
+
+    if (!fsSync.existsSync(manifestPath)) {
+      ui.substep(`No manifest found for ${pkgName} (skipping activation)`);
+      return;
+    }
+
     const manifest = JSON.parse(fsSync.readFileSync(manifestPath, 'utf8'));
     const activateScript = manifest.hooks?.activate;
-    if (!activateScript) return;
+
+    if (!activateScript) {
+      ui.substep(`No activation hook defined for ${pkgName}`);
+      return;
+    }
 
     const activatePath = path.join(
       projectDir,
@@ -503,12 +519,17 @@ function activatePluginHook(pkgName: string, projectDir: string): void {
       pkgName,
       activateScript
     );
-    if (!fsSync.existsSync(activatePath)) return;
 
+    if (!fsSync.existsSync(activatePath)) {
+      ui.warn(`Activation script not found: ${activatePath}`);
+      return;
+    }
+
+    ui.substep(`Running activation hook for ${pkgName}...`);
     runQuietly(`node "${activatePath}" "${projectDir}"`, projectDir);
-    ui.substep(`Executed activation hook for ${pkgName}`);
+    ui.substep(`✓ Activation complete for ${pkgName}`);
   } catch {
-    ui.warn(`Could not execute activation hook for ${pkgName}`);
+    ui.warn(`Could not execute activation hook for`);
   }
 }
 async function setupInfrastructure(
