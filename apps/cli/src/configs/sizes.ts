@@ -1,56 +1,33 @@
-// apps/cli/src/configs/sizes.ts
-export const projectSizes = {
+import { z } from 'zod';
+
+export const ProjectSizeSchema = z.enum(['small', 'medium', 'large']);
+export type ProjectSize = z.infer<typeof ProjectSizeSchema>;
+
+export const projectSizes: Record<
+  ProjectSize,
+  {
+    description: string;
+    modules: string[];
+    plugins: string[];
+    infra: string[];
+  }
+> = {
   small: {
     description: 'Minimal MVP: Auth + DB basics.',
-    modules: ['auth', 'db'],
-    plugins: ['better-auth-basic', 'email-resend', 'prisma-basic'],
-    infra: ['local-db'],
-    featureLevels: {
-      auth: 'basic',
-      payments: 'none',
-      communications: 'basic',
-      realtime: 'none',
-    },
+    modules: ['auth', 'db', 'email-resend'],
+    plugins: ['small'],
+    infra: ['postgres'],
   },
   medium: {
     description: 'SaaS-ready: Admin + monitoring.',
-    modules: ['auth', 'db', 'admin', 'monitoring'],
-    plugins: [
-      'better-auth',
-      'email-resend',
-      'prisma-postgres',
-      'admin-panel',
-      'monitoring-basic',
-      'stripe-checkout and transactions',
-    ],
-    infra: ['postgres', 'redis'],
-    featureLevels: {
-      auth: 'social',
-      payments: 'subscriptions',
-      communications: 'transactional',
-      realtime: 'basic',
-    },
+    modules: ['auth', 'db', 'admin', 'stripe', 'email', 'monitoring-dashboard'],
+    plugins: ['medium'],
+    infra: ['postgres'],
   },
   large: {
-    description: 'Enterprise: Orgs + scale.',
+    description: 'Enterprise: Orgs + scales hhjhj.',
     modules: ['auth', 'db', 'admin', 'orgs', 'payments', 'monitoring'],
-    plugins: [
-      // 'better-auth-enterprise',
-      // 'prisma-distributed',
-      // 'admin-panel',
-      // 'monitoring-advanced',
-      'stripe', // Maps to @skipsetup/plugin-stripe with platform features
-      // 'resend-marketing',
-      // 'socket-enterprise',
-      // 'queue',
-      // 's3',
-    ],
+    plugins: ['medium'],
     infra: ['postgres', 'redis', 'queue', 's3'],
-    featureLevels: {
-      auth: 'enterprise',
-      payments: 'platform',
-      communications: 'marketing',
-      realtime: 'enterprise',
-    },
   },
 };
