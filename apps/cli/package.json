@@ -1,6 +1,6 @@
 {
   "name": "skipsetup-cli",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "type": "module",
   "bin": {
     "skipsetup": "dist/cli.js"
@@ -8,19 +8,26 @@
   "main": "dist/cli.js",
   "types": "dist/cli.d.ts",
   "scripts": {
-      "build": "pnpm -F @skipsetup/core build && pnpm -F @skipsetup/plugin-small build && pnpm -F @skipsetup/plugin-medium build && tsc --build",
-  "prepublishOnly": "pnpm run build",
+    "build": "tsc --build",
     "type-check": "tsc --noEmit -p tsconfig.tests.json",
     "lint": "eslint src --ext .ts --fix",
     "test": "vitest --config vitest.config.ts"
   },
-  "dependencies": {
-    
+    "dependencies": {
+    "@skipsetup/core": "workspace:*",
+    "@skipsetup/plugin-small": "workspace:*",
+    "@skipsetup/plugin-medium": "workspace:*",
     "clipanion": "^3.2.1",
-    "figlet": "^1.9.4",
-    "gradient-string": "^3.0.0",
-    "js-yaml": "^4.1.0",
     "zod": "^3.23.8"
+  },
+
+  "publishConfig": {
+    "access": "public",
+    "dependencies": {
+      "@skipsetup/core": "^0.1.0",
+      "@skipsetup/plugin-small": "^0.1.0",
+      "@skipsetup/plugin-medium": "^0.1.0"
+    }
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
