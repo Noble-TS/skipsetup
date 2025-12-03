@@ -415,6 +415,11 @@ export const api = createTRPCReact<AppRouter>();
     console.log(`   2. pnpm db:push`);
     console.log(`   3. pnpm dev`);
     console.log('');
+    console.log(
+      `${STYLE.italic}For Kiro cli , in root folder ! ${STYLE.reset}\n`
+    );
+    console.log(`  kiro-cli`);
+    console.log('');
   } catch {
     console.log('');
     ui.error('Scaffolding Failed');
