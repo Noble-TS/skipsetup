@@ -452,29 +452,35 @@ async function installPlugin(
   const pkgName = `@skipsetup/plugin-${plugin}`;
   const pluginPath = path.join(rootDir, 'packages', `plugins-${plugin}`);
 
-  if (!fsSync.existsSync(pluginPath)) {
-    ui.warn(`Source not found: ${pluginPath}`);
+  let isLocal = false;
+
+  if (fsSync.existsSync(pluginPath)) {
+    // Local build (dev mode)
+    isLocal = true;
+
+    try {
+      runQuietly('pnpm build', pluginPath);
+    } catch {
+      ui.warn(`Failed to build ${pkgName}`);
+    }
+  }
+
+  // Install plugin
+  try {
+    if (isLocal) {
+      runQuietly(`pnpm add ${pkgName}@file:${pluginPath}`, projectDir);
+    } else {
+      // Install from npm registry
+      runQuietly(`pnpm add ${pkgName}`, projectDir);
+    }
+  } catch (err) {
+    console.error(
+      `Failed to install ${pkgName}: ${err}. You may need to install manually.`
+    );
     return;
   }
 
-  // Build plugin - quiet
-  try {
-    runQuietly('pnpm build', pluginPath);
-  } catch {
-    ui.warn(`Failed to build ${pkgName}`);
-  }
-
-  // Install - quiet
-  try {
-    runQuietly(`pnpm add ${pkgName}@file:${pluginPath}`, projectDir);
-  } catch {
-    // Fallback to inherit if quiet install fails really badly
-    console.error(
-      `Failed to install ${pkgName} quietly, attempting normal install...`
-    );
-  }
-
-  // Activate
+  // Activate plugin
   const manifestPath = path.join(
     projectDir,
     'node_modules',
@@ -495,7 +501,6 @@ async function installPlugin(
   );
   if (!fsSync.existsSync(activatePath)) return;
 
-  // Run activation script
   execSync(`node "${activatePath}" "${projectDir}"`, {
     cwd: projectDir,
     stdio: 'inherit',
