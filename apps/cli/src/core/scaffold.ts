@@ -450,84 +450,41 @@ async function installPlugin(
   rootDir: string
 ): Promise<void> {
   const pkgName = `@skipsetup/plugin-${plugin}`;
+  const pluginPath = path.join(rootDir, 'packages', `plugins-${plugin}`);
 
-  // Calculate and verify the local plugin path
-  const localPluginPath = path.join(rootDir, 'packages', `plugins-${plugin}`);
-  const hasLocalPlugin = fsSync.existsSync(localPluginPath);
-
-  // Debug logging for paths
-  ui.substep(`Checking for plugin: ${pkgName}`);
-  ui.substep(`  rootDir: ${rootDir}`);
-  ui.substep(`  localPluginPath: ${localPluginPath}`);
-  ui.substep(`  exists: ${hasLocalPlugin}`);
-
-  if (hasLocalPlugin) {
-    ui.substep(`Found local source at: ${localPluginPath}`);
-
-    // First, verify the plugin has package.json and build script
-    const pluginPackageJson = path.join(localPluginPath, 'package.json');
-    const hasPackageJson = fsSync.existsSync(pluginPackageJson);
-
-    if (!hasPackageJson) {
-      ui.warn(`Local plugin missing package.json. Falling back to npm...`);
-      installFromNpm(pkgName, projectDir);
-    } else {
+  if (fsSync.existsSync(pluginPath)) {
+    ui.info('Plugin', `Building local plugin ${pkgName}...`);
+    try {
+      runQuietly('pnpm build', pluginPath);
+      runQuietly(`pnpm add ${pkgName}@file:${pluginPath}`, projectDir);
+      ui.info('Plugin', `Installed local plugin ${pkgName}`);
+    } catch {
+      ui.warn(
+        `Failed to build or install local plugin ${pkgName}, falling back to npm`
+      );
       try {
-        // Read package.json to check for build script
-        const pkgContent = JSON.parse(
-          await fs.readFile(pluginPackageJson, 'utf8')
-        );
-        const hasBuildScript = pkgContent.scripts && pkgContent.scripts.build;
-
-        if (!hasBuildScript) {
-          ui.warn(
-            `Local plugin has no build script. Trying to install directly...`
-          );
-          runQuietly(`pnpm add ${pkgName}@file:${localPluginPath}`, projectDir);
-          ui.substep(`Installed local plugin directly: ${pkgName}`);
-        } else {
-          // Try to build and install
-          ui.substep(`Building local plugin: ${pkgName}`);
-          runQuietly('pnpm build', localPluginPath);
-
-          // Verify build output exists
-          const distPath = path.join(localPluginPath, 'dist');
-          if (!fsSync.existsSync(distPath)) {
-            throw new Error('Build failed - no dist directory created');
-          }
-
-          ui.substep(`Installing local build...`);
-          runQuietly(`pnpm add ${pkgName}@file:${localPluginPath}`, projectDir);
-          ui.substep(`✓ Installed local build: ${pkgName}`);
-        }
-      } catch {
-        ui.warn(`Local build/install failed`);
-        ui.warn(`Falling back to npm registry...`);
-        installFromNpm(pkgName, projectDir);
+        runQuietly(`pnpm add ${pkgName}`, projectDir);
+        ui.info('Plugin', `Installed ${pkgName} from npm`);
+      } catch (err) {
+        ui.error(`Failed to install ${pkgName} from npm`);
+        throw err;
       }
     }
   } else {
-    ui.substep(`No local source found at: ${localPluginPath}`);
-    ui.substep(`Installing from npm registry...`);
-    installFromNpm(pkgName, projectDir);
+    ui.info(
+      'Plugin',
+      `Local path not found, installing ${pkgName} from npm...`
+    );
+    try {
+      runQuietly(`pnpm add ${pkgName}`, projectDir);
+      ui.info('Plugin', `Installed ${pkgName} from npm`);
+    } catch (err) {
+      ui.error(`Failed to install ${pkgName} from npm`);
+      throw err;
+    }
   }
 
-  // Always try to activate hooks
-  activatePluginHook(pkgName, projectDir);
-}
-
-// Helper function to handle npm installation
-function installFromNpm(pkgName: string, projectDir: string): void {
-  try {
-    runQuietly(`pnpm add ${pkgName}`, projectDir);
-    ui.substep(`✓ Installed ${pkgName} from npm registry`);
-  } catch {
-    ui.error(`Failed to install ${pkgName} from npm registry.`);
-  }
-}
-
-// Helper function to run the plugin's activation hook
-function activatePluginHook(pkgName: string, projectDir: string): void {
+  // Activate hook if exists
   const manifestPath = path.join(
     projectDir,
     'node_modules',
@@ -536,24 +493,19 @@ function activatePluginHook(pkgName: string, projectDir: string): void {
   );
   if (!fsSync.existsSync(manifestPath)) return;
 
-  try {
-    const manifest = JSON.parse(fsSync.readFileSync(manifestPath, 'utf8'));
-    const activateScript = manifest.hooks?.activate;
-    if (!activateScript) return;
+  const manifest = JSON.parse(fsSync.readFileSync(manifestPath, 'utf8'));
+  const activateScript = manifest.hooks?.activate;
+  if (!activateScript) return;
 
-    const activatePath = path.join(
-      projectDir,
-      'node_modules',
-      pkgName,
-      activateScript
-    );
-    if (!fsSync.existsSync(activatePath)) return;
+  const activatePath = path.join(
+    projectDir,
+    'node_modules',
+    pkgName,
+    activateScript
+  );
+  if (!fsSync.existsSync(activatePath)) return;
 
-    runQuietly(`node "${activatePath}" "${projectDir}"`, projectDir);
-    ui.substep(`Executed activation hook for ${pkgName}`);
-  } catch {
-    ui.warn(`Could not execute activation hook for ${pkgName}`);
-  }
+  runQuietly(`node "${activatePath}" "${projectDir}"`, projectDir);
 }
 
 async function setupInfrastructure(
