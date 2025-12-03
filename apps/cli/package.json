@@ -33,7 +33,7 @@
     "js-yaml": "^4.1.0",
       "@skipsetup/core": "^0.1.0",
       "@skipsetup/plugin-small": "^0.1.0",
-      "@skipsetup/plugin-medium": "^0.1.0"
+      "@skipsetup/plugin-medium": "^0.1.1"
     }
   },
   "devDependencies": {
