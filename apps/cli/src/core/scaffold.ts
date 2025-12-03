@@ -2,16 +2,16 @@ import { generateComprehensiveKiroContext } from './kiro-context-generator.js';
 import { generateKiroContext } from './kiro-context-generator-ss.js';
 import { execSync } from 'child_process';
 import * as path from 'path';
-import { fileURLToPath } from 'url';
+// import { fileURLToPath } from 'url';
 import { projectSizes } from '@skipsetup/core';
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import { performance } from 'perf_hooks';
 import { Buffer } from 'buffer';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const rootDir = path.resolve(__dirname, '../../../..');
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
+// const rootDir = path.resolve(__dirname, '../../../..');
 
 // --- UI & TERMINAL UTILITIES ---
 
@@ -152,8 +152,12 @@ export async function scaffoldProject(
   const config = projectSizes[size as keyof typeof projectSizes];
   const fullDir = path.resolve(projectDir);
 
+  // FIX: Use process.cwd() to get the monorepo root
+  const monorepoRoot = process.cwd();
+
   ui.header(`Scaffold Project: ${size}`);
   ui.info('Target', fullDir);
+  ui.info('Monorepo Root', monorepoRoot);
   ui.info(
     'Config',
     `${config.plugins.length} plugins, ${config.infra.length} services`
@@ -295,7 +299,8 @@ export const api = createTRPCReact<AppRouter>();
       for (const plugin of config.plugins) {
         try {
           ui.substep(`Processing: ${plugin}`);
-          await installPlugin(plugin, fullDir, rootDir);
+          // Pass monorepoRoot
+          await installPlugin(plugin, fullDir, monorepoRoot);
         } catch {
           ui.warn(`Plugin ${plugin} skipped due to errors`);
         }
@@ -303,7 +308,6 @@ export const api = createTRPCReact<AppRouter>();
     } else {
       ui.substep('No plugins requested');
     }
-
     ui.step(8, 8, 'Generating AI Development Context');
 
     try {
