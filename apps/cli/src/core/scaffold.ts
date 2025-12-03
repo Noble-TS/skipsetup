@@ -453,33 +453,34 @@ async function installPlugin(
   const pluginPath = path.join(rootDir, 'packages', `plugins-${plugin}`);
 
   if (fsSync.existsSync(pluginPath)) {
-    // Build local plugin
+    ui.info('Plugin', `Building local plugin ${pkgName}...`);
     try {
       runQuietly('pnpm build', pluginPath);
-    } catch {
-      ui.warn(`Failed to build ${pkgName}`);
-    }
-
-    // Install local
-    try {
       runQuietly(`pnpm add ${pkgName}@file:${pluginPath}`, projectDir);
+      ui.info('Plugin', `Installed local plugin ${pkgName}`);
     } catch {
-      console.error(
-        `Failed to install ${pkgName} from local path, falling back to npm`
+      ui.warn(
+        `Failed to build or install local plugin ${pkgName}, falling back to npm`
       );
-      runQuietly(`pnpm add ${pkgName}`, projectDir);
+      try {
+        runQuietly(`pnpm add ${pkgName}`, projectDir);
+        ui.info('Plugin', `Installed ${pkgName} from npm`);
+      } catch (err) {
+        ui.error(`Failed to install ${pkgName} from npm`);
+        throw err;
+      }
     }
   } else {
-    // Install from npm if local path not found
     ui.info(
       'Plugin',
       `Local path not found, installing ${pkgName} from npm...`
     );
     try {
       runQuietly(`pnpm add ${pkgName}`, projectDir);
-      ui.info('Plugin', `Installed plugin ${pkgName} from npm`);
+      ui.info('Plugin', `Installed ${pkgName} from npm`);
     } catch (err) {
-      console.error(`Failed to install ${pkgName} from npm`, err);
+      ui.error(`Failed to install ${pkgName} from npm`);
+      throw err;
     }
   }
 
@@ -504,12 +505,7 @@ async function installPlugin(
   );
   if (!fsSync.existsSync(activatePath)) return;
 
-  execSync(`node "${activatePath}" "${projectDir}"`, {
-    cwd: projectDir,
-    stdio: 'inherit',
-    timeout: 60000,
-    shell: '/bin/bash',
-  });
+  runQuietly(`node "${activatePath}" "${projectDir}"`, projectDir);
 }
 
 async function setupInfrastructure(
