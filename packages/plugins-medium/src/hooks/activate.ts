@@ -10666,11 +10666,175 @@ const Shop = () => {
 
 export default Shop;`,
     // Auth Pages
-    'src/app/(auth)/layout.tsx': `// Auth layout placeholder`,
-    'src/app/(auth)/signin/page.tsx': `// Signin page placeholder`,
-    'src/app/(auth)/signup/page.tsx': `// Signup page placeholder`,
-    'src/app/(auth)/forgot-password/page.tsx': `// Forgot password page placeholder`,
-    'src/app/(auth)/reset-password/page.tsx': `// Reset password page placeholder`,
+    'src/app/(auth)/layout.tsx': `"use client";
+import Link from "next/link";
+import React from "react";
+import { Shield, Zap, Users, Rocket, Sparkles, ArrowRight, CheckCircle } from "lucide-react";
+
+export default function AuthLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const features = [
+    {
+      icon: <Shield className="h-5 w-5" />,
+      title: "Secure Authentication",
+      description: "Enterprise-grade security with advanced encryption"
+    },
+    {
+      icon: <Zap className="h-5 w-5" />,
+      title: "Blazing Fast",
+      description: "Optimized performance with real-time capabilities"
+    },
+    {
+      icon: <Users className="h-5 w-5" />,
+      title: "Team Ready",
+      description: "Collaborate seamlessly with your team members"
+    },
+    {
+      icon: <Rocket className="h-5 w-5" />,
+      title: "Scalable",
+      description: "Grows with your application needs"
+    }
+  ];
+
+  return (
+    <div className="min-h-screen w-full bg-gradient-to-br from-neutral-50 to-emerald-50/30 dark:from-neutral-900 dark:to-emerald-950/20 text-neutral-800 dark:text-neutral-100 overflow-hidden font-sans">
+      <div className="flex min-h-screen w-full lg:flex-row flex-col">
+        
+        {/* Left Side: Form Container */}
+        <div className="flex-1 flex items-center justify-center p-6 lg:p-12 relative z-10">
+          <div className="w-full max-w-md">
+             {children}
+          </div>
+        </div>
+
+        {/* Right Side: Branding Panel (Hidden on mobile) */}
+        <div className="hidden lg:flex flex-1 relative items-center justify-center p-12 overflow-hidden bg-gradient-to-br from-emerald-600 to-emerald-700">
+          {/* Decorative Elements */}
+          <div className="absolute top-1/4 -right-12 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+          <div className="absolute bottom-1/4 -left-12 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
+          
+          <div className="relative z-10 flex flex-col items-center justify-center text-center max-w-lg space-y-8">
+            {/* Premium Badge */}
+            <div className="inline-flex items-center gap-2 rounded-2xl bg-white/20 backdrop-blur-sm px-4 py-2 text-sm font-semibold text-white border border-white/20">
+              <Sparkles className="h-4 w-4" />
+              Enterprise Ready Platform
+              <ArrowRight className="h-3 w-3" />
+            </div>
+
+            {/* Main Branding */}
+            <div className="space-y-4">
+              <div className="flex justify-center mb-4">
+                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm border border-white/20 shadow-lg">
+                  <div className="text-xl font-bold text-white">SS</div>
+                </div>
+              </div>
+              <h1 className="text-4xl font-bold tracking-tight text-white">
+                Welcome to{" "}
+                <span className="bg-gradient-to-r from-white to-emerald-100 bg-clip-text text-transparent">
+                  SkipSetup
+                </span>
+              </h1>
+              <p className="text-xl text-emerald-100 font-light">
+                Build, scale, and manage your applications with enterprise-grade tools.
+              </p>
+            </div>
+
+            {/* Feature Grid */}
+            <div className="grid grid-cols-2 gap-4 mt-8">
+              {features.map((feature, index) => (
+                <div
+                  key={index}
+                  className="group relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 p-4 text-left transition-all hover:bg-white/15 hover:shadow-lg"
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-white">
+                      {feature.icon}
+                    </div>
+                    <h3 className="font-semibold text-white text-sm">
+                      {feature.title}
+                    </h3>
+                  </div>
+                  <p className="text-emerald-100 text-xs leading-relaxed">
+                    {feature.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-2 gap-6 mt-8">
+              {[
+                { value: "99.9%", label: "Uptime" },
+                { value: "Secure", label: "Auth" },
+                { value: "Fast", label: "Performance" },
+                { value: "24/7", label: "Reliable" }
+              ].map((stat, index) => (
+                <div key={index} className="text-center">
+                  <div className="text-2xl font-bold text-white">{stat.value}</div>
+                  <div className="text-sm text-emerald-100">{stat.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Tech Stack */}
+            <div className="flex flex-wrap justify-center gap-2 mt-8">
+              {['Next.js', 'TypeScript', 'Tailwind', 'tRPC', 'Prisma', 'Auth'].map((tech) => (
+                <span key={tech} className="px-3 py-1.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm text-xs font-medium text-emerald-100">
+                  {tech}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}`,
+    'src/app/(auth)/signin/page.tsx': `import SignInForm from "~/app/_components/auth/SignInForm";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Next.js SignIn Page | TailAdmin - Next.js Dashboard Template",
+  description: "This is Next.js Signin Page TailAdmin Dashboard Template",
+};
+
+export default function SignIn() {
+  return <SignInForm />;
+}
+`,
+    'src/app/(auth)/signup/page.tsx': `import SignUpForm from "~/app/_components/auth/SignUpForm";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Next.js SignUp Page | TailAdmin - Next.js Dashboard Template",
+  description: "This is Next.js SignUp Page TailAdmin Dashboard Template",
+  // other metadata
+};
+
+export default function SignUp() {
+  return <SignUpForm />;
+}
+`,
+    'src/app/(auth)/forgot-password/page.tsx': `import ForgotPassword from "~/app/_components/auth/ForgotPassword";
+
+export default function ForgotPasswordPage() {
+  return <ForgotPassword />;
+}`,
+    'src/app/(auth)/reset-password/page.tsx': `import ResetPassword from "~/app/_components/auth/ResetPassword";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Next.js SignIn Page | TailAdmin - Next.js Dashboard Template",
+  description: "This is Next.js Signin Page TailAdmin Dashboard Template",
+};
+
+export default function SignIn() {
+  return <ResetPassword />;
+}
+`,
 
     // Protected Pages
     'src/app/(protected)/layout.tsx': `import AuthGuard from "~/app/_components/auth/AuthGuard";
