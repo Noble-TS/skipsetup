@@ -6671,9 +6671,9 @@ export default function NotificationDropdown() {
 import Image from "next/image";
 import Link from "next/link";
 import React, { useState, useEffect, useRef } from "react";
-import { Dropdown } from "../ui/dropdown/Dropdown"; 
-import { DropdownItem } from "../ui/dropdown/DropdownItem"; 
-import { authClient } from "~/server/better-auth/client"; 
+import { Dropdown } from "../ui/dropdown/Dropdown";
+import { DropdownItem } from "../ui/dropdown/DropdownItem";
+import { authClient } from "~/server/better-auth/client";
 
 const ProfileIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -6706,6 +6706,44 @@ const SettingsIcon = (props: React.SVGProps<SVGSVGElement>) => (
     />
   </svg>
 );
+
+interface AvatarProps {
+  size?: "sm" | "md" | "lg";
+  userImage: string | null;
+  userName: string;
+  getUserInitials: () => string;
+}
+
+const Avatar = ({ size = "md", userImage, userName, getUserInitials }: AvatarProps) => {
+  const sizeClasses = {
+    sm: "w-8 h-8 text-xs",
+    md: "w-10 h-10 text-sm",
+    lg: "w-11 h-11 text-base",
+  };
+
+  const currentSize = sizeClasses[size];
+  const imageSize = size === "lg" ? 44 : 40;
+
+  return (
+    <span className={\`shrink-0 overflow-hidden rounded-full \${currentSize}\`}>
+      {userImage ? (
+        <Image
+          width={imageSize}
+          height={imageSize}
+          src={userImage}
+          alt={userName}
+          className="rounded-full object-cover"
+        />
+      ) : (
+        <div
+          className={\`\${currentSize} rounded-full bg-gradient-to-br from-emerald-600 to-emerald-700 flex items-center justify-center text-white font-semibold\`}
+        >
+          {getUserInitials()}
+        </div>
+      )}
+    </span>
+  );
+};
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -6760,7 +6798,7 @@ export default function UserDropdown() {
       await authClient.signOut({
         fetchOptions: {
           onSuccess: () => {
-            window.location.href = "/"; 
+            window.location.href = "/";
           },
         },
       });
@@ -6794,39 +6832,6 @@ export default function UserDropdown() {
     );
   }
 
-  const Avatar = ({ size = "md" }: { size?: "sm" | "md" | "lg" }) => {
-    const sizeClasses = {
-      sm: "w-8 h-8 text-xs",
-      md: "w-10 h-10 text-sm", 
-      lg: "w-11 h-11 text-base", 
-    };
-
-    const currentSize = sizeClasses[size];
-    const imageSize = size === "lg" ? 44 : 40;
-
-    return (
-        <span
-    className=\`shrink-0 overflow-hidden rounded-full \${currentSize}\`
-  >
-        {userImage ? (
-          <Image
-            width={imageSize}
-            height={imageSize}
-            src={userImage}
-            alt={userName}
-            className="rounded-full object-cover"
-          />
-        ) : (
-          <div
-            className={\`\${currentSize} rounded-full bg-gradient-to-br from-emerald-600 to-emerald-700 flex items-center justify-center text-white font-semibold\`}
-          >
-            {getUserInitials()}
-          </div>
-        )}
-      </span>
-    );
-  };
-
   return (
     <div className="relative" ref={dropdownRef}>
       <button
@@ -6836,7 +6841,12 @@ export default function UserDropdown() {
         aria-controls="user-menu-dropdown"
         aria-label="User Account Menu"
       >
-        <Avatar size="lg" />
+        <Avatar
+          size="lg"
+          userImage={userImage}
+          userName={userName}
+          getUserInitials={getUserInitials}
+        />
 
         <div className="hidden md:block text-left mx-3 min-w-0">
           <span className="block font-semibold text-sm text-gray-800 dark:text-gray-100 truncate">
@@ -6872,7 +6882,12 @@ export default function UserDropdown() {
         className="absolute right-0 mt-3 w-64 md:w-[280px] flex flex-col rounded-xl border border-gray-100 bg-white p-2 shadow-2xl shadow-gray-300/50 dark:border-gray-700 dark:bg-gray-800 dark:shadow-black/50 z-50 transition-opacity transition-transform origin-top-right"
       >
         <div className="flex items-center gap-3 p-2 mb-2 border-b border-gray-100 dark:border-gray-700">
-          <Avatar size="md" />
+          <Avatar
+            size="md"
+            userImage={userImage}
+            userName={userName}
+            getUserInitials={getUserInitials}
+          />
           <div className="flex-1 min-w-0">
             <span className="block font-semibold text-sm text-gray-800 dark:text-gray-100 truncate">
               {userName}
@@ -6975,7 +6990,6 @@ export default function UserDropdown() {
     </div>
   );
 }`,
-
     // Layout Components
     'src/app/_components/layout/AdminLayoutClient.tsx': `"use client";
 
