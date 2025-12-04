@@ -1,6 +1,6 @@
 {
   "name": "skipsetup-cli",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "type": "module",
   "bin": {
     "skipsetup": "dist/cli.js"
@@ -32,8 +32,8 @@
     "gradient-string": "^3.0.0",
     "js-yaml": "^4.1.0",
       "@skipsetup/core": "^0.1.0",
-      "@skipsetup/plugin-small": "^0.1.0",
-      "@skipsetup/plugin-medium": "^0.1.1"
+      "@skipsetup/plugin-small": "^0.1.1",
+      "@skipsetup/plugin-medium": "^0.1.2"
     }
   },
   "devDependencies": {
