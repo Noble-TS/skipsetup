@@ -6805,9 +6805,9 @@ export default function UserDropdown() {
     const imageSize = size === "lg" ? 44 : 40;
 
     return (
-      <span
-        className=\`shrink-0 overflow-hidden rounded-full \${currentSize}\`
-      >
+        <span
+    className=\`shrink-0 overflow-hidden rounded-full \${currentSize}\`
+  >
         {userImage ? (
           <Image
             width={imageSize}
