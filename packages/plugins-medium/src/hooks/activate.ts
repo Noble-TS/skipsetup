@@ -985,7 +985,7 @@ export async function POST(request: Request) {
     }
 
     const { data, error } = await resend.emails.send({
-      from: 'Skipsetup <noreply@tigerbingogame.com>',
+      from: process.env.RESEND_EMAIL_FROM!,
       to: [email],
       subject,
       react: EmailTemplate({ 
@@ -12050,6 +12050,8 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_..."
 
 # Resend
 RESEND_API_KEY="re_..."
+RESEND_EMAIL_FROM= "Skipsetup <noreply@yourdomain.com>"
+
 
 # Next.js
 NEXT_PUBLIC_URL="http://localhost:3000"
