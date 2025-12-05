@@ -107,6 +107,8 @@ model User {
   email         String
   emailVerified Boolean   @default(false)
   image         String? //@db.Text
+  firstName     String? //@db.Text 
+  lastName      String? //@db.Text 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @default(now()) @updatedAt
   sessions      Session[]
@@ -185,9 +187,9 @@ if (env.NODE_ENV !== "production") globalForPrisma.prisma = db;
     // Better Auth Configuration
     'src/server/better-auth/config.ts': `import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { emailOTP, admin } from "better-auth/plugins";
-import { PrismaClient } from "../../../generated/prisma/client";
+import { emailOTP } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
+import { PrismaClient } from "../../../generated/prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -223,7 +225,7 @@ export const auth = betterAuth({
           },
           body: JSON.stringify({
             email: user.email,
-            firstName: user.firstName || 'User',
+            firstName: (user as any).firstName || user.name?.split(' ')[0] || 'User',
             type: 'reset-password',
             resetUrl: url,
           }),
@@ -232,7 +234,6 @@ export const auth = betterAuth({
         if (!response.ok) {
           throw new Error('Failed to send reset password email');
         }
-        console.log(\`Reset password email sent to \${user.email}\`);
       } catch (error) {
         console.error('Error sending reset password email:', error);
         throw error;
@@ -241,7 +242,7 @@ export const auth = betterAuth({
     onPasswordReset: async ({ user }, request) => {
       console.log(\`Password for user \${user.email} has been reset.\`);
     },
-    resetPasswordTokenExpiresIn: 60 * 60, // 1 hour
+    resetPasswordTokenExpiresIn: 60 * 60,
   },
   plugins: [
     emailOTP({
@@ -268,7 +269,6 @@ export const auth = betterAuth({
           if (!response.ok) {
             throw new Error('Failed to send OTP email');
           }
-          console.log(\`OTP \${otp} sent to \${email} for \${type}\`);
         } catch (error) {
           console.error('Error sending OTP email:', error);
           throw error;
@@ -276,11 +276,11 @@ export const auth = betterAuth({
       },
     }),
     nextCookies()
-
   ],
   secret: process.env.BETTER_AUTH_SECRET!,
-  baseURL: process.env.BETTER_AUTH_URL,
+  baseURL: process.env.NEXT_PUBLIC_APP_URL,
 });`,
+
     'src/server/better-auth/server.ts': `import { auth } from ".";
 import { headers } from "next/headers";
 import { cache } from "react";
@@ -463,7 +463,7 @@ export const postRouter = createTRPCRouter({
       return ctx.db.post.create({
         data: {
           name: input.name,
-          createdById: ctx.session.user.id,
+          createdBy: { connect: { id: ctx.session.user.id } },
         },
       });
     }),
@@ -471,7 +471,7 @@ export const postRouter = createTRPCRouter({
   getLatest: protectedProcedure.query(async ({ ctx }) => {
     const post = await ctx.db.post.findFirst({
       orderBy: { createdAt: "desc" },
-      where: { createdById: ctx.session.user.id },
+      where: { createdBy: { id: ctx.session.user.id } },
     });
 
     return post ?? null;
@@ -2608,18 +2608,17 @@ export default function AuthLayout({
     </div>
   );
 }`,
-    'src/app/(auth)/signin/page.tsx': `import SignInForm from "~/app/_components/auth/SignInForm";
+    'src/app/(auth)/signin/page.tsx': `import SignUpForm from "~/app/_components/auth/SignUpForm";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Next.js SignIn Page | TailAdmin - Next.js Dashboard Template",
-  description: "This is Next.js Signin Page TailAdmin Dashboard Template",
+  title: "Next.js SignUp Page | TailAdmin - Next.js Dashboard Template",
+  description: "This is Next.js SignUp Page TailAdmin Dashboard Template",
 };
 
-export default function SignIn() {
-  return <SignInForm />;
-}
-`,
+export default function SignUp() {
+  return <SignUpForm />;
+}`,
     'src/app/(auth)/signup/page.tsx': `import SignUpForm from "~/app/_components/auth/SignUpForm";
 import type { Metadata } from "next";
 
