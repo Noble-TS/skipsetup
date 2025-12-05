@@ -463,7 +463,7 @@ export const postRouter = createTRPCRouter({
       return ctx.db.post.create({
         data: {
           name: input.name,
-          createdBy: { connect: { id: ctx.session.user.id } },
+          createdById: ctx.session.user.id, // FIX: Use createdById instead of createdBy
         },
       });
     }),
@@ -471,7 +471,7 @@ export const postRouter = createTRPCRouter({
   getLatest: protectedProcedure.query(async ({ ctx }) => {
     const post = await ctx.db.post.findFirst({
       orderBy: { createdAt: "desc" },
-      where: { createdBy: { id: ctx.session.user.id } },
+      where: { createdById: ctx.session.user.id }, // FIX: Use createdById instead of createdBy
     });
 
     return post ?? null;
@@ -2608,7 +2608,18 @@ export default function AuthLayout({
     </div>
   );
 }`,
-    'src/app/(auth)/signin/page.tsx': `import SignUpForm from "~/app/_components/auth/SignUpForm";
+    'src/app/(auth)/signin/page.tsx': `import SignInForm from "~/app/_components/auth/SignInForm";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Next.js SignIn Page | TailAdmin - Next.js Dashboard Template",
+  description: "This is Next.js Signin Page TailAdmin Dashboard Template",
+};
+
+export default function SignIn() {
+  return <SignInForm />;
+}`,
+    'src/app/(auth)/signup/page.tsx': `import SignUpForm from "~/app/_components/auth/SignUpForm";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -2619,19 +2630,6 @@ export const metadata: Metadata = {
 export default function SignUp() {
   return <SignUpForm />;
 }`,
-    'src/app/(auth)/signup/page.tsx': `import SignUpForm from "~/app/_components/auth/SignUpForm";
-import type { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "Next.js SignUp Page | TailAdmin - Next.js Dashboard Template",
-  description: "This is Next.js SignUp Page TailAdmin Dashboard Template",
-  // other metadata
-};
-
-export default function SignUp() {
-  return <SignUpForm />;
-}
-`,
     'src/app/(auth)/forgot-password/page.tsx': `import ForgotPassword from "~/app/_components/auth/ForgotPassword";
 
 export default function ForgotPasswordPage() {
