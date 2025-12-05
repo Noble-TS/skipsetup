@@ -1,6 +1,6 @@
 {
   "name": "@skipsetup/plugin-small",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Stripe payments integration plugin for skipsetup",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

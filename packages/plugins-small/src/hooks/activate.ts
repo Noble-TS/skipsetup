@@ -463,7 +463,11 @@ export const postRouter = createTRPCRouter({
       return ctx.db.post.create({
         data: {
           name: input.name,
-          createdById: ctx.session.user.id, // FIX: Use createdById instead of createdBy
+          createdBy: {
+            connect: {
+              id: ctx.session.user.id
+            }
+          },
         },
       });
     }),
@@ -471,7 +475,11 @@ export const postRouter = createTRPCRouter({
   getLatest: protectedProcedure.query(async ({ ctx }) => {
     const post = await ctx.db.post.findFirst({
       orderBy: { createdAt: "desc" },
-      where: { createdById: ctx.session.user.id }, // FIX: Use createdById instead of createdBy
+      where: {
+        createdBy: {
+          id: ctx.session.user.id
+        }
+      },
     });
 
     return post ?? null;
@@ -771,10 +779,6 @@ export default function SignInForm() {
   const [isChecked, setIsChecked] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [step, setStep] = useState<"email" | "otp">("email");
-  const [otp, setOtp] = useState("");
-  const [isSendingOtp, setIsSendingOtp] = useState(false);
-  const [useOtp, setUseOtp] = useState(false);
 
   const accentText = "text-[hsl(280,100%,70%)]";
   const inputStyles = "bg-black/20 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(280,100%,70%)] focus:ring-[hsl(280,100%,70%)]/20";
@@ -784,69 +788,6 @@ export default function SignInForm() {
     if (error) setError(null);
   };
 
-  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setOtp(e.target.value);
-    if (error) setError(null);
-  };
-
-  const resetForm = () => {
-    setStep("email");
-    setOtp("");
-    setUseOtp(false);
-    setError(null);
-  };
-
-  // Send OTP
-  const sendSignInOtp = async () => {
-    if (!formData.email) {
-      setError("Please enter your email address");
-      return;
-    }
-    setIsSendingOtp(true);
-    setError(null);
-    try {
-      const { data, error } = await authClient.emailOtp.sendVerificationOtp({
-        email: formData.email,
-        type: "sign-in",
-      });
-      if (error) setError(error.message ?? "Failed to send verification code");
-      if (data) setStep("otp");
-    } catch {
-      setError("Failed to send verification code");
-    } finally {
-      setIsSendingOtp(false);
-    }
-  };
-
-  // Verify OTP
-  const verifyOtpAndSignIn = async () => {
-    if (!otp) {
-      setError("Please enter the verification code");
-      return;
-    }
-    setIsLoading(true);
-    setError(null);
-    try {
-      const { data, error } = await authClient.signIn.emailOtp({
-        email: formData.email,
-        otp,
-      });
-      if (error) {
-        setError(error.message ?? "Failed to sign in with OTP");
-        return;
-      }
-      if (data) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        window.location.href = "/";
-      }
-    } catch {
-      setError("An unexpected error occurred");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Email/password login
   const handleEmailPasswordSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.email || !formData.password) {
@@ -866,7 +807,6 @@ export default function SignInForm() {
         return;
       }
       if (data) {
-        await new Promise(resolve => setTimeout(resolve, 500));
         window.location.href = "/";
       }
     } catch {
@@ -876,9 +816,99 @@ export default function SignInForm() {
     }
   };
 
-  // Rest of the component remains the same...
-};`,
-
+  // CRITICAL: Component MUST return JSX
+  return (
+    <div className="min-h-screen w-full font-sans relative overflow-hidden flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-gradient-to-b from-[#2e026d] to-[#15162c]">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
+        <div className="mb-6 px-4 sm:px-0">
+          <Link href="/" className="inline-flex items-center text-sm text-purple-200 hover:text-white transition-colors group">
+            <ChevronLeft className="mr-1 w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            Back to Home
+          </Link>
+        </div>
+        
+        <div className="bg-white/10 backdrop-blur-xl border border-white/10 py-8 px-4 shadow-2xl rounded-2xl sm:px-10 relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[hsl(280,100%,70%)] to-transparent opacity-70"></div>
+          
+          <div className="sm:mx-auto sm:w-full sm:max-w-md mb-8 text-center">
+            <h2 className="text-3xl font-bold tracking-tight text-white">
+              Sign In
+            </h2>
+            <p className="mt-2 text-sm text-purple-200">
+              Sign in to access your dashboard
+            </p>
+          </div>
+          
+          {error && (
+            <div className="mb-6 p-3 text-sm rounded-lg border border-red-500/50 bg-red-500/10 text-red-200">
+              {error}
+            </div>
+          )}
+          
+          <form onSubmit={handleEmailPasswordSignIn} className="space-y-6">
+            <div>
+              <Label className="text-purple-100">Email Address</Label>
+              <Input
+                type="email"
+                name="email"
+                placeholder="name@example.com"
+                value={formData.email}
+                onChange={handleInputChange}
+                disabled={isLoading}
+                className={inputStyles}
+                startIcon={<Mail className="w-4 h-4" />}
+              />
+            </div>
+            
+            <div>
+              <Label className="text-purple-100">Password</Label>
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  disabled={isLoading}
+                  className={\`\${inputStyles} pr-10\`}
+                  startIcon={<Lock className="w-4 h-4" />}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-300 hover:text-white transition-colors"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+            
+            <div className="flex items-center">
+              <Checkbox 
+                checked={isChecked} 
+                onChange={setIsChecked} 
+                disabled={isLoading} 
+                className="border-white/30 data-[state=checked]:bg-[hsl(280,100%,70%)]"
+              />
+              <span className="ml-2 text-sm text-purple-200">Remember me</span>
+            </div>
+            
+            <Button 
+              type="submit" 
+              variant="t3-purple" 
+              size="lg" 
+              disabled={isLoading}
+              isLoading={isLoading}
+              className="w-full"
+            >
+              Sign In
+            </Button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}`,
     'src/app/_components/auth/SignUpForm.tsx': `"use client";
 import Checkbox from "../form/input/Checkbox"; 
 import Input from "../form/input/InputField"; 
@@ -989,8 +1019,150 @@ export default function SignUpForm() {
     }
   };
 
-  // Rest of the component remains the same...
-};`,
+  // ADD THIS RETURN STATEMENT - Component MUST return JSX
+  return (
+    <div className="w-full">
+      <div className="mb-8">
+        <Link href="/" className="inline-flex items-center text-sm text-purple-200 hover:text-white transition-colors group">
+          <ChevronLeft className="w-4 h-4 mr-1 group-hover:-translate-x-1 transition-transform" />
+          Back to Home
+        </Link>
+      </div>
+
+      <div className="p-8 rounded-2xl bg-white/10 backdrop-blur-md shadow-2xl border border-white/10">
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold tracking-tight text-white mb-2">
+            {step === "form" ? "Create Account" : "Verify Email"}
+          </h1>
+          <p className="text-purple-200">
+            {step === "form" ? "Join the T3 community today" : \`Code sent to \${formData.email}\`}
+          </p>
+        </div>
+
+        {error && (
+          <div className="p-3 mb-6 text-sm rounded-lg bg-red-500/20 border border-red-500/50 text-red-200">
+            {error}
+          </div>
+        )}
+
+        {step === "form" ? (
+          <form onSubmit={handleEmailPasswordSignUp} className="space-y-5">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label className="text-purple-100 text-sm font-medium">First Name</Label>
+                <Input
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleInputChange}
+                  className={\`w-full bg-black/20 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-[hsl(280,100%,70%)]/50 \${accentBorder}\`}
+                  placeholder="John"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-purple-100 text-sm font-medium">Last Name</Label>
+                <Input
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleInputChange}
+                  className={\`w-full bg-black/20 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-[hsl(280,100%,70%)]/50 \${accentBorder}\`}
+                  placeholder="Doe"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-purple-100 text-sm font-medium">Email</Label>
+              <Input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                className={\`w-full bg-black/20 border-white/10 text-white placeholder:text-white/30 rounded-lg focus:ring-2 focus:ring-[hsl(280,100%,70%)]/50 \${accentBorder}\`}
+                placeholder="name@example.com"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-purple-100 text-sm font-medium">Password</Label>
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className={\`w-full bg-black/20 border-white/10 text-white placeholder:text-white/30 rounded-lg pr-10 focus:ring-2 focus:ring-[hsl(280,100%,70%)]/50 \${accentBorder}\`}
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-200 hover:text-white transition-colors"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <Checkbox 
+                checked={isChecked} 
+                onChange={setIsChecked} 
+                className="mt-1 border-white/30 data-[state=checked]:bg-[hsl(280,100%,70%)]"
+              />
+              <span className="text-sm text-purple-200">
+                I agree to the <Link href="/terms" className={\`\${accentColor} hover:underline\`}>Terms</Link> and <Link href="/privacy" className={\`\${accentColor} hover:underline\`}>Privacy Policy</Link>.
+              </span>
+            </div>
+
+            <Button 
+              disabled={isLoading}
+              className="w-full bg-[hsl(280,100%,70%)] hover:bg-[hsl(280,100%,60%)] text-[#2e026d] font-bold py-3 rounded-xl transition-all shadow-lg shadow-purple-900/20"
+            >
+              {isLoading ? "Creating Account..." : "Sign Up"}
+            </Button>
+          </form>
+        ) : (
+          <div className="space-y-6">
+            <div>
+              <Label className="text-purple-100">Verification Code</Label>
+              <Input
+                value={otp}
+                onChange={handleOtpChange}
+                maxLength={6}
+                className="w-full text-center text-3xl tracking-[1em] font-mono bg-black/20 border-white/10 text-white rounded-xl py-4 focus:border-[hsl(280,100%,70%)] focus:ring-0"
+                placeholder="000000"
+              />
+            </div>
+
+            <Button 
+              onClick={verifyEmail} 
+              disabled={isLoading || !otp}
+              className="w-full bg-[hsl(280,100%,70%)] hover:bg-[hsl(280,100%,60%)] text-[#2e026d] font-bold py-3 rounded-xl"
+            >
+              {isLoading ? "Verifying..." : "Verify & Login"}
+            </Button>
+            
+            <button 
+              onClick={() => setStep("form")} 
+              className="w-full text-purple-200 hover:text-white text-sm"
+            >
+              Change Email
+            </button>
+          </div>
+        )}
+
+        <div className="mt-8 text-center pt-6 border-t border-white/10">
+          <p className="text-purple-200">
+            Already have an account?{" "}
+            <Link href="/signin" className={\`\${accentColor} font-semibold hover:underline\`}>
+              Sign In
+            </Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}`,
 
     'src/app/_components/auth/UserDropdownProfile.tsx': `"use client";
 import Image from "next/image";
