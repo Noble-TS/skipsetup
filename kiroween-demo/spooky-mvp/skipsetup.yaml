@@ -1,0 +1,14 @@
+{
+  "description": "Minimal MVP: Auth + DB basics.",
+  "modules": [
+    "auth",
+    "db",
+    "email-resend"
+  ],
+  "plugins": [
+    "small"
+  ],
+  "infra": [
+    "local-db"
+  ]
+}

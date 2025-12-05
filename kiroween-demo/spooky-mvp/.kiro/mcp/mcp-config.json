@@ -1,0 +1,55 @@
+{
+  "version": "1.0",
+  "servers": {
+    "file-system": {
+      "command": "npx",
+      "args": [
+        "@modelcontextprotocol/server-filesystem",
+        "spooky-mvp"
+      ],
+      "env": {
+        "ALLOWED_PATHS": "spooky-mvp"
+      }
+    },
+    "postgres": {
+      "command": "npx",
+      "args": [
+        "@modelcontextprotocol/server-postgres"
+      ],
+      "env": {
+        "DATABASE_URL": "postgresql://localhost:5432/app"
+      }
+    },
+    "github": {
+      "command": "npx",
+      "args": [
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_TOKEN": ""
+      }
+    }
+  },
+  "tools": {
+    "read-file": {
+      "description": "Read contents of a file",
+      "server": "file-system"
+    },
+    "write-file": {
+      "description": "Write content to a file",
+      "server": "file-system"
+    },
+    "list-directory": {
+      "description": "List directory contents",
+      "server": "file-system"
+    },
+    "query-database": {
+      "description": "Execute SQL queries on PostgreSQL",
+      "server": "postgres"
+    },
+    "github-search": {
+      "description": "Search GitHub repositories and code",
+      "server": "github"
+    }
+  }
+}

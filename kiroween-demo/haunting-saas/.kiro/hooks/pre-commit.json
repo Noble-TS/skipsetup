@@ -1,0 +1,9 @@
+{
+  "name": "pre-commit",
+  "description": "Run before committing code to ensure quality",
+  "script": "#!/bin/bash\necho \"🔍 Running pre-commit checks...\"\n\n# Type checking\necho \"  Type checking...\"\npnpm type-check\nif [ $? -ne 0 ]; then\n  echo \"  ❌ TypeScript errors found\"\n  exit 1\nfi\n\n# Linting\necho \"  Linting...\"\npnpm lint\nif [ $? -ne 0 ]; then\n  echo \"  ❌ ESLint errors found\"\n  exit 1\nfi\n\n# Tests\necho \"  Running tests...\"\npnpm test --passWithNoTests\nif [ $? -ne 0 ]; then\n  echo \"  ❌ Tests failed\"\n  exit 1\nfi\n\necho \"  ✅ All pre-commit checks passed!\"\n",
+  "triggers": [
+    "commit"
+  ],
+  "enabled": true
+}

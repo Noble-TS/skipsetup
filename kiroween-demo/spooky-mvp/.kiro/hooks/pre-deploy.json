@@ -1,0 +1,9 @@
+{
+  "name": "pre-deploy",
+  "description": "Run before deployment to ensure production readiness",
+  "script": "#!/bin/bash\necho \" Running pre-deployment checks...\"\n\n# Build verification\necho \" Verifying build...\"\npnpm build\n\nif [ $? -ne 0 ]; then\n  echo \" Build failed\"\n  exit 1\nfi\n\n# Test suite\necho \" Running test suite...\"\npnpm test\n\nif [ $? -ne 0 ]; then\n  echo \" Tests failed\"\n  exit 1\nfi\n\n# Security audit\necho \" Running security audit...\"\npnpm audit --audit-level high\n\nif [ $? -ne 0 ]; then\n  echo \" Security vulnerabilities found\"\n  # Continue despite vulnerabilities (comment out exit to block deployment)\n  # exit 1\nfi\n\necho \" Project ready for deployment!\"\n",
+  "triggers": [
+    "deploy"
+  ],
+  "enabled": true
+}

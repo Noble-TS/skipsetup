@@ -1,0 +1,10 @@
+{
+  "name": "schema-validation",
+  "description": "Validate database schema changes",
+  "script": "#!/bin/bash\necho \" Validating database schema...\"\n\n# Check if schema has changes\nif git diff --name-only HEAD | grep -q \"prisma/schema.prisma\"; then\n  echo \" Database schema changes detected\"\n  \n  # Generate client to check for errors\n  pnpm db:generate\n  \n  if [ $? -ne 0 ]; then\n    echo \" Schema validation failed\"\n    exit 1\n  fi\n  \n  # Run tests that depend on database\n  pnpm test -- db\n  \n  echo \" Schema changes validated successfully\"\nelse\n  echo \" No schema changes detected\"\nfi\n",
+  "triggers": [
+    "commit",
+    "push"
+  ],
+  "enabled": true
+}

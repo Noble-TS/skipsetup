@@ -1,0 +1,146 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdBy   User   @relation(fields: [createdById], references: [id])
+  createdById String
+
+  @@index([name])
+}
+
+model Session {
+  id             String   @id @default(cuid())
+  expiresAt      DateTime
+  token          String   @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  ipAddress      String?
+  userAgent      String?
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  impersonatedBy String?
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verification")
+}
+
+model Product {
+  id              String   @id @default(cuid())
+  name            String
+  price           Int
+  category        String?
+  stripePriceId   String?
+  stripeProductId String?
+  description     String?
+  image           String?
+  stock           Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  orderItems OrderItem[]
+
+  @@map("products")
+}
+
+model Order {
+  id                    String   @id @default(cuid())
+  userId                String
+  amount                Int // Total amount in cents
+  status                String   @default("PENDING") // PENDING, PAID, FAILED, CANCELLED
+  stripeSessionId       String?
+  stripePaymentIntentId String?
+  shippingName          String?
+  shippingAddress       String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Int // Price at time of purchase in cents
+
+  // Relations
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+model User {
+  id                     String        @id @default(cuid())
+  name                   String?
+  firstName              String?
+  lastName               String?
+  email                  String        @unique
+  emailVerified          Boolean       @default(false)
+  image                  String?
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+  accounts               Account[]
+  sessions               Session[]
+  role                   String?       @default("user")
+  banned                 Boolean?      @default(false)
+  banReason              String?
+  banExpires             DateTime?
+  stripeCustomerId       String?
+  orders                 Order[]
+  posts                  Post[]
+  subscriptionTier       String?       @default("free") // free, spooky, haunting, kiroween
+  subscriptionStatus     String?       @default("inactive") // active, inactive, canceled
+  subscriptionStartDate  DateTime?
+  subscriptionEndDate    DateTime?
+  stripeSubscriptionId   String?
+
+  @@map("user")
+}

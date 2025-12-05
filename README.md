@@ -226,7 +226,30 @@ STRIPE_SECRET_KEY="sk_test_xxxx"
 STRIPE_WEBHOOK_SECRET="whsec_xxxx"
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_xxxx"
 ```
+## 🎬 Kiroween Demo Showcase
 
+For the Kiroween Hackathon, we built two complete applications to demonstrate SkipSetup's AI-native development capabilities. Each project was generated with SkipSetup and developed with Kiro using the built-in `.kiro` context system.
+
+| Demo Project | Description | Scale | Key Features | Watch Demo |
+|--------------|-------------|-------|--------------|------------|
+| **[haunting-saas](kiroween-demo/haunting-saas)** | Complete SaaS platform with admin, payments, and monitoring | `--size medium` | • Stripe subscriptions<br>• Admin dashboard<br>• User management<br>• Analytics monitoring | [Watch Video](https://youtu.be/AGcngx2II9Q?t=242) |
+| **[spooky-mvp](kiroween-demo/spooky-mvp)** | Minimal viable product with authentication and core features | `--size small` | • Email authentication<br>• Basic dashboard<br>• Database setup<br>• Responsive UI | [Watch Video](https://youtu.be/AGcngx2II9Q?t=62) |
+
+### 🧠 How Kiro Was Used in These Demos
+
+Both projects include a comprehensive `.kiro` folder that transforms Kiro from a generic assistant into a **project-aware expert**:
+
+**Project-Specific Agents**
+- **`auth-expert.json`** – Understands authentication flows (Better Auth for SaaS, Basic Auth for MVP)
+- **`database-architect.json`** – Specializes in Prisma schemas and migrations
+- **`fullstack-specialist.json`** – Implements complete features end-to-end
+
+**Development Workflow**
+1. **Generate**: `npx skipsetup create haunting-saas --size medium`
+2. **Develop**: Ask Kiro to add features like "subscription analytics" or "user profile editor"
+3. **Result**: Perfectly integrated features on the first try, with zero hallucinations
+
+**Watch the full demo video to see:** [Complete 3-minute showcase](https://youtu.be/AGcngx2II9Q)
 ## Deployment
 
 Deploy to Vercel:

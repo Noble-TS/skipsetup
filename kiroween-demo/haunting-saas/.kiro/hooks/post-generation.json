@@ -1,0 +1,9 @@
+{
+  "name": "post-generation",
+  "description": "Run after project generation to set up initial state",
+  "script": "#!/bin/bash\necho \"🚀 Running post-generation setup...\"\n\n# Generate Prisma client\necho \"  Generating Prisma client...\"\npnpm db:generate\n\n# Create initial database (or run pending migrations)\necho \"  Creating/Updating initial database...\"\npnpm db:push # Use 'migrate dev' if you prefer migrations\n\n# Seed database if needed (uncomment if you have a seed file)\n# if [ -f \"prisma/seed.ts\" ]; then\n#   echo \"  Seeding database...\"\n#   pnpm db:seed\n# fi\n\n# Build project\necho \"  Building project...\"\npnpm build\n\necho \"✅ Post-generation setup complete!\"\n",
+  "triggers": [
+    "generate"
+  ],
+  "enabled": true
+}

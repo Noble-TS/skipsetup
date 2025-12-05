@@ -5,3 +5,7 @@ coverage
 *.log
 .env*.local
 .turbo/
+kiroween-demo/haunting-saas/node_modules
+kiroween-demo/spooky-mvp/node_modules
+kiroween-demo/haunting-saas/generated
+kiroween-demo/spooky-mvp/generated

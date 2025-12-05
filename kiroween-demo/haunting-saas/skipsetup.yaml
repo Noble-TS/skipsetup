@@ -1,0 +1,18 @@
+{
+  "description": "SaaS-ready: Admin + monitoring.",
+  "modules": [
+    "auth",
+    "db",
+    "admin",
+    "stripe",
+    "email",
+    "monitoring-dashboard"
+  ],
+  "plugins": [
+    "medium"
+  ],
+  "infra": [
+    "postgres",
+    "redis"
+  ]
+}
