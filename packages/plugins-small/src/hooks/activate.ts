@@ -460,26 +460,20 @@ export const postRouter = createTRPCRouter({
   create: protectedProcedure
     .input(z.object({ name: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
+      // Use the scalar field createdById for direct assignment
       return ctx.db.post.create({
         data: {
           name: input.name,
-          createdBy: {
-            connect: {
-              id: ctx.session.user.id
-            }
-          },
+          createdById: ctx.session.user.id,
         },
       });
     }),
 
   getLatest: protectedProcedure.query(async ({ ctx }) => {
+    // For where clause, you can filter by the scalar field
     const post = await ctx.db.post.findFirst({
       orderBy: { createdAt: "desc" },
-      where: {
-        createdBy: {
-          id: ctx.session.user.id
-        }
-      },
+      where: { createdById: ctx.session.user.id },
     });
 
     return post ?? null;
